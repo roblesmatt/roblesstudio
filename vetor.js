@@ -1551,13 +1551,19 @@
     });
   }
 
-  function handlePointerDown(x, y) {
+  function getPenStrokeWidth(baseWidth, penData = {}) {
+    if (penData.pointerType !== "pen") return baseWidth;
+    const p = Math.max(0.15, penData.pressure ?? 0.5);
+    return +(baseWidth * (0.35 + p * 1.4)).toFixed(2);
+  }
+
+  function handlePointerDown(x, y, penData = {}) {
     const toolId = getCurrentToolId();
     state.dragStart = { x, y };
     state.dragLast = { x, y };
 
     if (toolId === "pen") {
-      state.draftPoints.push({ x: Math.round(x), y: Math.round(y) });
+      state.draftPoints.push({ x: Math.round(x), y: Math.round(y), p: penData.pressure ?? 0.5 });
       syncWithCore();
       return;
     }
@@ -1627,6 +1633,7 @@
 
     if (toolId === "pencil" || toolId === "vectorBrush" || toolId === "brushBold") {
       snapshot();
+      const baseW = toolId === "brushBold" ? 8 : toolId === "vectorBrush" ? Math.max(4, state.activeStrokeWidth * 1.8) : state.activeStrokeWidth;
       ws().paths.push({
         id: `stroke-${Date.now().toString(36)}`,
         type: "shape",
@@ -1634,11 +1641,11 @@
         opacity: 1,
         fill: state.activeFill,
         stroke: state.activeStroke,
-        strokeWidth: toolId === "brushBold" ? 8 : toolId === "vectorBrush" ? Math.max(4, state.activeStrokeWidth * 1.8) : state.activeStrokeWidth,
+        strokeWidth: getPenStrokeWidth(baseW, penData),
         dash: [],
         cornerRadius: 0,
         gradient: "none",
-        points: [{ x: Math.round(x), y: Math.round(y) }],
+        points: [{ x: Math.round(x), y: Math.round(y), p: penData.pressure ?? 0.5 }],
       });
       ws().selectedIndex = ws().paths.length - 1;
       syncWithCore();
@@ -1668,7 +1675,7 @@
     }
   }
 
-  function handlePointerMove(x, y) {
+  function handlePointerMove(x, y, penData = {}) {
     if (!state.dragStart) return;
     const toolId = getCurrentToolId();
     const dx = x - state.dragLast.x, dy = y - state.dragLast.y;
@@ -1677,13 +1684,18 @@
 
     if (toolId === "move" && current) {
       if (current.type === "text" || current.type === "arcText") { current.x += dx; current.y += dy; }
-      current.points = current.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+      current.points = current.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
       syncWithCore();
     } else if (["node", "warpSkew"].includes(toolId) && current && state.draggedNodeIdx >= 0) {
-      current.points[state.draggedNodeIdx] = { x: Math.round(x), y: Math.round(y) };
+      current.points[state.draggedNodeIdx] = { ...current.points[state.draggedNodeIdx], x: Math.round(x), y: Math.round(y) };
       syncWithCore();
     } else if ((toolId === "pencil" || toolId === "vectorBrush" || toolId === "brushBold") && current) {
-      current.points.push({ x: Math.round(x), y: Math.round(y) });
+      const baseW = toolId === "brushBold" ? 8 : toolId === "vectorBrush" ? Math.max(4, state.activeStrokeWidth * 1.8) : state.activeStrokeWidth;
+      current.points.push({ x: Math.round(x), y: Math.round(y), p: penData.pressure ?? 0.5 });
+      if (penData.pointerType === "pen") {
+        const targetW = getPenStrokeWidth(baseW, penData);
+        current.strokeWidth = +(current.strokeWidth * 0.65 + targetW * 0.35).toFixed(2);
+      }
       syncWithCore();
     } else if ((toolId.startsWith("shape") || toolId === "layoutTextFrame" || toolId === "layoutImageFrame") && current) {
       current.points = buildPolygonPoints(state.dragStart.x, state.dragStart.y, x, y, toolId);
@@ -1698,6 +1710,7 @@
       syncWithCore();
     }
   }
+
 
   function handlePointerUp() {
     if (state.dragStart) {

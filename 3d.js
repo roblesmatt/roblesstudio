@@ -1277,10 +1277,16 @@
     ctx.restore();
   }
 
-  function applySculptStroke(pointerX, pointerY) {
+    function applySculptStroke(pointerX, pointerY, penData = {}) {
     const cx = Math.cos(state.rotX), sx = Math.sin(state.rotX);
     const cy = Math.cos(state.rotY), sy = Math.sin(state.rotY);
     const { brush, radius, strength, symmetryX } = state.sculpt;
+
+    // Se for caneta (Apple Pencil / Stylus), multiplica a intensidade pela pressão
+    const pressureFactor =
+      penData.pointerType === "pen"
+        ? Math.max(0.15, (penData.pressure ?? 0.5) * 1.7)
+        : 1;
 
     state.mesh.verts = state.mesh.verts.map(([vx, vy, vz]) => {
       const pt = projectPoint([vx, vy, vz], cx, sx, cy, sy, state.scale);
@@ -1296,20 +1302,54 @@
       const nx = vx / len, ny = vy / len, nz = vz / len;
 
       if (brush === "brushClay" || brush === "brushInflate") {
-        const amt = strength * falloff;
+        const amt = strength * pressureFactor * falloff;
         return [vx + nx * amt, vy + ny * amt, vz + nz * amt];
       }
       if (brush === "brushCarve") {
-        const amt = strength * falloff;
+        const amt = strength * pressureFactor * falloff;
         return [vx - nx * amt, vy - ny * amt, vz - nz * amt];
       }
       if (brush === "brushSmooth") {
-        const pull = 1 - 0.045 * falloff;
+        const pull = 1 - 0.045 * pressureFactor * falloff;
         return [vx * pull, vy * pull, vz * pull];
       }
       return [vx, vy, vz];
     });
   }
+
+  function handlePointerDown(x, y, penData = {}) {
+    state.isDragging = true;
+    state.lastX = x;
+    state.lastY = y;
+    if (state.submode === "escultura") {
+      state.sculpt.cursorX = x;
+      state.sculpt.cursorY = y;
+      state.sculpt.hasCursor = true;
+      applySculptStroke(x, y, penData);
+      syncWithCore();
+    }
+  }
+
+  function handlePointerMove(x, y, penData = {}) {
+    if (state.submode === "escultura") {
+      state.sculpt.cursorX = x;
+      state.sculpt.cursorY = y;
+      state.sculpt.hasCursor = true;
+      if (state.isDragging) applySculptStroke(x, y, penData);
+      syncWithCore();
+      return;
+    }
+    if (!state.isDragging) return;
+    state.rotY += (x - state.lastX) * 0.013;
+    state.rotX += (y - state.lastY) * 0.013;
+    state.lastX = x;
+    state.lastY = y;
+    if (state.submode === "renderizacao") {
+      state.renderEngine.needsTrace = true;
+    }
+    syncWithCore();
+  }
+
 
   function handlePointerDown(x, y) {
     state.isDragging = true;

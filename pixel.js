@@ -738,11 +738,17 @@
   }
 
   // =========================================================================
-  // MOTOR DE PINCÉIS KRITA (Esboço, Aquarela & Pincéis RGBA)
+  // MOTOR DE PINCÉIS KRITA (Esboço, Aquarela & Pincéis RGBA com Caneta)
   // =========================================================================
-  function paintKritaStroke(x0, y0, x1, y1) {
+  function paintKritaStroke(x0, y0, x1, y1, penData = {}) {
     const brush = state.kr.brushType;
-    const size = state.kr.size;
+    const isPen = penData.pointerType === "pen";
+    const pressure = isPen ? Math.max(0.1, penData.pressure ?? 0.5) : 0.65;
+
+    // A pressão da caneta modula o tamanho e a densidade do pigmento
+    const size = isPen ? state.kr.size * (0.35 + pressure * 1.15) : state.kr.size;
+    const alphaScale = isPen ? 0.35 + pressure * 0.9 : 1;
+
     const color = state.kr.color;
     const dist = Math.hypot(x1 - x0, y1 - y0);
     const steps = Math.max(1, Math.ceil(dist / Math.max(1, size * 0.18)));
@@ -767,34 +773,31 @@
       const py = y0 + (y1 - y0) * t;
 
       if (brush === "krPencilHB" || brush === "krCharcoal") {
-        // Esboço: grafite/carvão com micro-grão orgânico
         const grainCount = brush === "krCharcoal" ? 18 : 8;
         const radius = brush === "krCharcoal" ? size * 0.45 : Math.max(1.2, size * 0.14);
         paintCtx.fillStyle = color;
-        paintCtx.globalAlpha = brush === "krCharcoal" ? 0.24 : 0.45;
+        paintCtx.globalAlpha = Math.min(1, (brush === "krCharcoal" ? 0.24 : 0.45) * alphaScale);
         for (let g = 0; g < grainCount; g++) {
           const jx = (Math.random() - 0.5) * radius * 2;
           const jy = (Math.random() - 0.5) * radius * 2;
           paintCtx.fillRect(px + jx, py + jy, 1.3, 1.3);
         }
       } else if (brush === "krInkPen") {
-        // Nanquim G-Pen nítido
         paintCtx.fillStyle = color;
         paintCtx.globalAlpha = 0.95;
         paintCtx.beginPath();
-        paintCtx.arc(px, py, Math.max(1.5, size * 0.18), 0, Math.PI * 2);
+        paintCtx.arc(px, py, Math.max(1.1, size * 0.18), 0, Math.PI * 2);
         paintCtx.fill();
       } else if (brush === "krWatercolorWash" || brush === "krWatercolorEdge") {
-        // Aquarela Krita: núcleo translúcido úmido + borda externa pigmentada
         const r = size * 0.85;
-        paintCtx.globalAlpha = 0.06;
+        paintCtx.globalAlpha = Math.min(0.35, 0.06 * alphaScale);
         paintCtx.fillStyle = color;
         paintCtx.beginPath();
         paintCtx.arc(px, py, r, 0, Math.PI * 2);
         paintCtx.fill();
 
         if (brush === "krWatercolorEdge") {
-          paintCtx.globalAlpha = 0.14;
+          paintCtx.globalAlpha = Math.min(0.5, 0.14 * alphaScale);
           paintCtx.strokeStyle = color;
           paintCtx.lineWidth = 1.2;
           paintCtx.beginPath();
@@ -802,19 +805,17 @@
           paintCtx.stroke();
         }
       } else if (brush === "krWaterBlender") {
-        // Água limpa suavizando o papel
-        paintCtx.globalAlpha = 0.08;
+        paintCtx.globalAlpha = Math.min(0.3, 0.08 * alphaScale);
         paintCtx.fillStyle = "#FAF7F0";
         paintCtx.beginPath();
         paintCtx.arc(px, py, size * 0.9, 0, Math.PI * 2);
         paintCtx.fill();
       } else if (brush === "krRgbaImpasto" || brush === "krRgbaBristle" || brush === "krRgbaAirbrush") {
-        // Pincéis RGBA: cerdas multi-filamento com alpha e volume
         if (brush === "krRgbaAirbrush") {
           const grad = paintCtx.createRadialGradient(px, py, 1, px, py, size);
           grad.addColorStop(0, color);
           grad.addColorStop(1, "rgba(250,247,240,0)");
-          paintCtx.globalAlpha = 0.16;
+          paintCtx.globalAlpha = Math.min(0.45, 0.16 * alphaScale);
           paintCtx.fillStyle = grad;
           paintCtx.beginPath();
           paintCtx.arc(px, py, size, 0, Math.PI * 2);
@@ -823,7 +824,7 @@
           const bristles = brush === "krRgbaBristle" ? 9 : 5;
           paintCtx.strokeStyle = color;
           paintCtx.lineWidth = brush === "krRgbaBristle" ? 1.4 : size * 0.35;
-          paintCtx.globalAlpha = brush === "krRgbaBristle" ? 0.35 : 0.65;
+          paintCtx.globalAlpha = Math.min(1, (brush === "krRgbaBristle" ? 0.35 : 0.65) * alphaScale);
           for (let b = 0; b < bristles; b++) {
             const off = ((b / bristles) - 0.5) * size;
             paintCtx.beginPath();
@@ -837,6 +838,7 @@
 
     paintCtx.restore();
   }
+
 
   // =========================================================================
   // RENDERIZAÇÃO DO QUADRO PIXEL NO PALCO CENTRAL
@@ -928,7 +930,7 @@
     };
   }
 
-  function handlePointerDown(x, y) {
+    function handlePointerDown(x, y, penData = {}) {
     const tool = getCurrentToolId();
     const { cx, cy } = toCanvasCoords(x, y);
 
@@ -936,7 +938,7 @@
       state.kr.isDrawing = true;
       state.kr.lastX = cx;
       state.kr.lastY = cy;
-      paintKritaStroke(cx, cy, cx, cy);
+      paintKritaStroke(cx, cy, cx, cy, penData);
       syncWithCore();
     } else if (state.submode === "manipulacao") {
       state.pc.isDragging = true;
@@ -947,6 +949,35 @@
       }
     }
   }
+
+  function handlePointerMove(x, y, penData = {}) {
+    const tool = getCurrentToolId();
+    const { cx, cy } = toCanvasCoords(x, y);
+
+    if (state.kr.isDrawing && (state.submode === "pintura" || tool === "pcEraser")) {
+      paintKritaStroke(state.kr.lastX, state.kr.lastY, cx, cy, penData);
+      state.kr.lastX = cx;
+      state.kr.lastY = cy;
+      syncWithCore();
+    } else if (state.pc.isDragging && state.submode === "manipulacao") {
+      if (tool === "pcMoveLayer") {
+        state.pc.offsetX += x - state.pc.dragStartX;
+        state.pc.offsetY += y - state.pc.dragStartY;
+        state.pc.dragStartX = x;
+        state.pc.dragStartY = y;
+      } else if (tool === "pcMarqueeRect" && state.pc.selection) {
+        state.pc.selection.w = x - state.pc.dragStartX;
+        state.pc.selection.h = y - state.pc.dragStartY;
+      }
+      syncWithCore();
+    }
+  }
+
+  function handlePointerUp() {
+    state.kr.isDrawing = false;
+    state.pc.isDragging = false;
+  }
+
 
   function handlePointerMove(x, y) {
     const tool = getCurrentToolId();

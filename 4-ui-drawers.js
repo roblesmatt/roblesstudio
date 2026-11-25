@@ -6,12 +6,13 @@
   let drawerEl = null;
   let layerSearch = "";
 
+  // 4 abas com ícones iguais ao layout da referência
+    // 4 abas das Personas: Vetor, Pixel, Vídeo e 3D
   const HISTORY_TABS = [
-    { id: "vector", label: "Vetores", empty: "Nenhum vetor ainda." },
-    { id: "sketch", label: "Esboços", empty: "Nenhum esboço ainda." },
-    { id: "video", label: "Vídeo", empty: "Nenhuma ação de Vídeo." },
-    { id: "3d", label: "Sólidos 3D", empty: "Nenhum sólido ainda." },
-    { id: "all", label: "Tudo", empty: "Nenhuma ação registrada." },
+    { id: "vector", label: "Vetor", empty: "Nenhuma ação em Vetor.", icon: Core.ICONS.vector },
+    { id: "pixel", label: "Pixel", empty: "Nenhuma ação em Pixel.", icon: Core.ICONS.pixel },
+    { id: "video", label: "Vídeo", empty: "Nenhuma ação em Vídeo.", icon: Core.ICONS.video },
+    { id: "3d", label: "3D", empty: "Nenhuma ação em 3D.", icon: Core.ICONS.cube3d },
   ];
 
   function ensureElements() {
@@ -38,21 +39,37 @@
     if (!drawerEl) {
       drawerEl = document.createElement("aside");
       drawerEl.id = "core-bottom-drawer";
-      drawerEl.className = "hud-pill";
       document.querySelector(".viewport, .studio-shell, body")?.appendChild(drawerEl);
     }
 
     const mobile = Core.isMobile();
+    const isHistory = Core.state.activeBottomDrawer === "history";
+
     barEl.style.cssText = `
       position:fixed; display:inline-flex; flex-direction:row; align-items:center;
       bottom:${mobile ? "10px" : "14px"}; right:${mobile ? "10px" : "14px"};
       gap:${mobile ? "2px" : "4px"}; padding:${mobile ? "3px" : "4px"}; z-index:31;
     `;
-    drawerEl.style.cssText = `
-      position:fixed; display:${Core.state.activeBottomDrawer ? "flex" : "none"}; flex-direction:column; gap:8px;
-      bottom:${mobile ? "56px" : "66px"}; right:${mobile ? "10px" : "14px"}; left:${mobile ? "10px" : "auto"};
-      width:${mobile ? "auto" : "296px"}; max-height:460px; padding:10px; z-index:32; color:#fff; font-size:12px; overflow-y:auto;
-    `;
+
+    if (isHistory) {
+      // No modo Histórico usa o wrapper limpo com os dois botões flutuantes no topo + card bege
+      drawerEl.className = "history-popover-wrap";
+      drawerEl.style.cssText = `
+        position:fixed; display:${Core.state.activeBottomDrawer ? "flex" : "none"};
+        bottom:${mobile ? "56px" : "66px"}; right:${mobile ? "10px" : "14px"};
+        width:${mobile ? "calc(100vw - 20px)" : "284px"}; max-width:300px; z-index:32;
+      `;
+    } else {
+      // Camadas e Medidas mantêm o card bege padrão
+      drawerEl.className = "hud-pill";
+      drawerEl.style.cssText = `
+        position:fixed; display:${Core.state.activeBottomDrawer ? "flex" : "none"}; flex-direction:column; gap:8px;
+        bottom:${mobile ? "56px" : "66px"}; right:${mobile ? "10px" : "14px"}; left:${mobile ? "10px" : "auto"};
+        width:${mobile ? "auto" : "284px"}; max-height:460px; padding:12px; z-index:32;
+        background:var(--hud-bg); color:var(--text-icon); border:1px solid rgba(0,0,0,0.16);
+        border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,0.14); font-size:12px; overflow-y:auto;
+      `;
+    }
   }
 
   function renderLayerRow(node, depth = 0) {
@@ -63,18 +80,18 @@
     let html = `
       <div data-layer-row="${node.id}" style="
         display:flex;align-items:center;justify-content:space-between;gap:6px;
-        padding:5px 6px 5px ${6 + depth * 14}px; border-radius:7px; cursor:pointer;
-        background:${isSelected ? "rgba(245, 158, 11, 0.18)" : "rgba(255,255,255,0.03)"};
-        border:1px solid ${isSelected ? "rgba(245, 158, 11, 0.55)" : "transparent"};
+        padding:6px 6px 6px ${6 + depth * 14}px; border-radius:7px; cursor:pointer;
+        background:${isSelected ? "rgba(0, 0, 0, 0.1)" : "rgba(0, 0, 0, 0.03)"};
+        border:1px solid ${isSelected ? "rgba(0, 0, 0, 0.35)" : "transparent"};
       ">
         <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
           <span style="width:12px;height:12px;border-radius:3px;flex-shrink:0;background:${node.swatch};"></span>
           <div style="min-width:0;flex:1;">
-            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${node.name}</div>
-            <div style="font-size:9.5px;opacity:0.62;">${node.meta || ""}</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text-icon);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${node.name}</div>
+            <div style="font-size:9.5px;opacity:0.65;color:var(--text-icon);">${node.meta || ""}</div>
           </div>
         </div>
-        <button type="button" data-toggle-vis="${node.id}" style="background:none;border:none;color:${node.visible ? "#fff" : "rgba(255,255,255,0.3)"};cursor:pointer;">
+        <button type="button" data-toggle-vis="${node.id}" style="background:none;border:none;color:${node.visible ? "var(--text-icon)" : "rgba(0,0,0,0.28)"};cursor:pointer;">
           ${node.visible ? Core.ICONS.eye : Core.ICONS.eyeOff}
         </button>
       </div>
@@ -94,19 +111,19 @@
     if (mode === "layers") {
       const selNode = Core.findLayer(Core.state.selectedLayerId);
       drawerEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;font-weight:700;">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,0.14);padding-bottom:8px;font-weight:700;">
           <span>Camadas & StudioLink</span>
           <div style="display:flex;gap:4px;">
-            <button type="button" id="btn-add-lyr" style="background:rgba(255,255,255,0.08);border:none;color:#fff;border-radius:5px;padding:3px 6px;cursor:pointer;">${Core.ICONS.plus}</button>
-            <button type="button" id="btn-del-lyr" style="background:rgba(255,255,255,0.08);border:none;color:#f87171;border-radius:5px;padding:3px 6px;cursor:pointer;">${Core.ICONS.trash}</button>
+            <button type="button" id="btn-add-lyr" style="background:rgba(0,0,0,0.08);border:none;color:var(--text-icon);border-radius:5px;padding:4px 6px;cursor:pointer;">${Core.ICONS.plus}</button>
+            <button type="button" id="btn-del-lyr" style="background:rgba(0,0,0,0.08);border:none;color:#b91c1c;border-radius:5px;padding:4px 6px;cursor:pointer;">${Core.ICONS.trash}</button>
           </div>
         </div>
-        <input id="inp-lyr-q" type="text" value="${layerSearch}" placeholder="Filtrar camadas..." style="background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 8px;color:#fff;font-size:11px;" />
+        <input id="inp-lyr-q" type="text" value="${layerSearch}" placeholder="Filtrar camadas..." style="background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.14);border-radius:7px;padding:6px 8px;color:var(--text-icon);font-size:11px;outline:none;" />
         ${selNode && selNode.kind !== "group" ? `
-          <div style="display:flex;gap:4px;flex-wrap:wrap;padding:6px;border-radius:7px;background:rgba(255,255,255,0.04);">
-            ${selNode.area === "vector" ? `<button type="button" data-bridge="to-3d" style="flex:1;padding:5px;border-radius:5px;border:none;background:rgba(56,189,248,0.2);color:#7dd3fc;font-size:10px;cursor:pointer;">Extrudar → 3D</button>` : ""}
-            ${selNode.area !== "3d" ? `<button type="button" data-bridge="tex-3d" style="flex:1;padding:5px;border-radius:5px;border:none;background:rgba(245,158,11,0.2);color:#fcd34d;font-size:10px;cursor:pointer;">Textura no 3D</button>` : ""}
-            ${selNode.area === "3d" ? `<button type="button" data-bridge="to-vector" style="flex:1;padding:5px;border-radius:5px;border:none;background:rgba(56,189,248,0.2);color:#7dd3fc;font-size:10px;cursor:pointer;">Extrair Vetor 2D</button>` : ""}
+          <div style="display:flex;gap:4px;flex-wrap:wrap;padding:6px;border-radius:7px;background:rgba(0,0,0,0.05);">
+            ${selNode.area === "vector" ? `<button type="button" data-bridge="to-3d" style="flex:1;padding:5px;border-radius:5px;border:none;background:var(--accent-amber-bg);color:#fff;font-size:10px;cursor:pointer;">Extrudar → 3D</button>` : ""}
+            ${selNode.area !== "3d" ? `<button type="button" data-bridge="tex-3d" style="flex:1;padding:5px;border-radius:5px;border:none;background:var(--accent-amber-bg);color:#fff;font-size:10px;cursor:pointer;">Textura no 3D</button>` : ""}
+            ${selNode.area === "3d" ? `<button type="button" data-bridge="to-vector" style="flex:1;padding:5px;border-radius:5px;border:none;background:var(--accent-amber-bg);color:#fff;font-size:10px;cursor:pointer;">Extrair Vetor 2D</button>` : ""}
           </div>
         ` : ""}
         <div style="display:flex;flex-direction:column;gap:4px;">
@@ -117,7 +134,7 @@
       drawerEl.querySelector("#inp-lyr-q")?.addEventListener("input", (e) => { layerSearch = e.target.value; render(); });
       drawerEl.querySelector("#btn-add-lyr")?.addEventListener("click", () => {
         const grp = Core.findLayer(Core.state.activeArea === "3d" ? "grp-3d" : "grp-2d");
-        const n = Core.hydrateSceneNode({ id: `lyr-${Date.now()}`, name: `Nova Camada`, area: Core.state.activeArea, visible: true, swatch: "#f59e0b" });
+        const n = Core.hydrateSceneNode({ id: `lyr-${Date.now()}`, name: `Nova Camada`, area: Core.state.activeArea, visible: true, swatch: "#161515" });
         grp.children.unshift(n);
         grp.meta = `${grp.children.length} Layers`;
         Core.state.selectedLayerId = n.id;
@@ -127,7 +144,7 @@
       drawerEl.querySelector("#btn-del-lyr")?.addEventListener("click", () => {
         if (!Core.state.selectedLayerId.startsWith("grp-")) {
           Core.deleteLayer(Core.state.selectedLayerId);
-          Core.state.selectedLayerId = "l-param-base";
+          Core.state.selectedLayerId = "l-vec-path";
           render();
           Core.emit("render:request");
         }
@@ -159,17 +176,17 @@
       const m = Core.state.measuresByArea[Core.state.activeArea];
       const meta = Core.getAreaMeta();
       drawerEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;font-weight:700;">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,0.14);padding-bottom:8px;font-weight:700;">
           <span>Medidas · ${meta.label}</span>
-          <button type="button" id="btn-rst-m" style="background:rgba(255,255,255,0.08);border:none;color:#fff;border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;">Resetar</button>
+          <button type="button" id="btn-rst-m" style="background:rgba(0,0,0,0.08);border:none;color:var(--text-icon);border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;">Resetar</button>
         </div>
-        <label style="display:flex;flex-direction:column;gap:3px;">
+        <label style="display:flex;flex-direction:column;gap:4px;">
           <div style="display:flex;justify-content:space-between;"><span>Escala</span><span>${m.scale}%</span></div>
-          <input type="range" id="rng-sc" min="20" max="250" value="${m.scale}" style="accent-color:#f59e0b;" />
+          <input type="range" id="rng-sc" min="20" max="250" value="${m.scale}" style="accent-color:#161515;" />
         </label>
-        <label style="display:flex;flex-direction:column;gap:3px;">
+        <label style="display:flex;flex-direction:column;gap:4px;">
           <div style="display:flex;justify-content:space-between;"><span>Rotação</span><span>${m.rotation}°</span></div>
-          <input type="range" id="rng-rt" min="-180" max="180" value="${m.rotation}" style="accent-color:#f59e0b;" />
+          <input type="range" id="rng-rt" min="-180" max="180" value="${m.rotation}" style="accent-color:#161515;" />
         </label>
       `;
       drawerEl.querySelector("#btn-rst-m")?.addEventListener("click", () => {
@@ -189,25 +206,85 @@
         render();
       });
     } else if (mode === "history") {
-      const tabObj = HISTORY_TABS.find((t) => t.id === Core.state.activeHistoryTab) || HISTORY_TABS[4];
+      const tabObj = HISTORY_TABS.find((t) => t.id === Core.state.activeHistoryTab) || HISTORY_TABS[3];
       const list = Core.state.activeHistoryTab === "all"
         ? Core.state.historyEntries
         : Core.state.historyEntries.filter((e) => e.tab === Core.state.activeHistoryTab);
 
       drawerEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;font-weight:700;">
-          <span>Histórico · ${tabObj.label}</span>
-          <button type="button" id="btn-clr-h" style="background:rgba(255,255,255,0.08);border:none;color:#f87171;border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;">Limpar</button>
+        <!-- Botões superiores ({ } Parâmetros e Camadas) -->
+        <div class="history-top-toggles">
+          <button type="button" class="history-toggle-pill" id="btn-hist-measures" title="Medidas e Parâmetros">{ }</button>
+          <button type="button" class="history-toggle-pill is-active" id="btn-hist-layers" title="Camadas">${Core.ICONS.layers}</button>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;">
-          ${HISTORY_TABS.map((t) => `<button type="button" data-ht="${t.id}" style="padding:3px 6px;border-radius:5px;border:none;font-size:10px;cursor:pointer;background:${Core.state.activeHistoryTab === t.id ? "#f59e0b" : "rgba(255,255,255,0.08)"};color:${Core.state.activeHistoryTab === t.id ? "#111" : "#fff"};">${t.label}</button>`).join("")}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          ${list.length === 0 ? `<div style="opacity:0.5;text-align:center;padding:12px;">${tabObj.empty}</div>` : list.map((i) => `<div style="display:flex;justify-content:space-between;padding:5px 7px;background:rgba(255,255,255,0.04);border-radius:6px;"><span>${i.label}</span><span style="opacity:0.5;font-size:9.5px;">${i.time}</span></div>`).join("")}
+
+        <!-- Card Principal Bege (#CEC8B8) -->
+        <div class="history-card">
+          <!-- 4 Abas Segmentadas -->
+          <div class="history-tabs-bar">
+            ${HISTORY_TABS.map((t) => `
+              <button
+                type="button"
+                class="history-tab-btn ${Core.state.activeHistoryTab === t.id ? "is-active" : ""}"
+                data-ht="${t.id}"
+                title="${t.label}"
+              >${t.icon}</button>
+            `).join("")}
+          </div>
+
+          <!-- Cabeçalho com Título + Contador -->
+          <div class="history-card-header">
+            <span class="history-card-title">Histórico</span>
+            <div class="history-card-counter" title="Total de passos">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              <span>${list.length}</span>
+              ${list.length > 0 ? `<button type="button" id="btn-clr-h" title="Limpar histórico" style="background:none;border:none;color:rgba(0,0,0,0.45);cursor:pointer;margin-left:4px;font-size:11px;">✕</button>` : ""}
+            </div>
+          </div>
+
+          <!-- Lista Hierárquica de Operações -->
+          <div class="history-tree-list">
+            ${list.length === 0
+              ? `<div style="opacity:0.5;text-align:center;padding:16px 8px;font-size:12px;">${tabObj.empty}</div>`
+              : list.map((item) => {
+                  const isDerived = item.label.includes("→") || item.label.toLowerCase().includes("extru") || item.label.toLowerCase().includes("preset");
+                  const stepIcon = item.tab === "3d"
+                    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`
+                    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
+                  return `
+                    <div class="history-step-row">
+                      <div class="history-step-left">
+                        <span class="history-step-caret">${isDerived ? "›" : ""}</span>
+                        ${stepIcon}
+                        <span>${item.label}</span>
+                      </div>
+                      <span class="history-step-ref">${item.time}</span>
+                    </div>
+                  `;
+                }).join("")
+            }
+          </div>
         </div>
       `;
-      drawerEl.querySelector("#btn-clr-h")?.addEventListener("click", () => { Core.state.historyEntries = []; render(); });
-      drawerEl.querySelectorAll("[data-ht]").forEach((b) => b.addEventListener("click", () => { Core.state.activeHistoryTab = b.dataset.ht; render(); }));
+
+      drawerEl.querySelector("#btn-hist-measures")?.addEventListener("click", () => {
+        Core.state.activeBottomDrawer = "measures";
+        render();
+      });
+      drawerEl.querySelector("#btn-hist-layers")?.addEventListener("click", () => {
+        Core.state.activeBottomDrawer = "layers";
+        render();
+      });
+      drawerEl.querySelector("#btn-clr-h")?.addEventListener("click", () => {
+        Core.state.historyEntries = [];
+        render();
+      });
+      drawerEl.querySelectorAll("[data-ht]").forEach((b) =>
+        b.addEventListener("click", () => {
+          Core.state.activeHistoryTab = b.dataset.ht;
+          render();
+        })
+      );
     }
   }
 

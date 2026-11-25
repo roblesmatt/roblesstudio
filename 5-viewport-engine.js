@@ -202,12 +202,29 @@
   }
 
   canvas.addEventListener("pointerdown", (e) => {
-    lastX = e.clientX;
-    lastY = e.clientY;
-    if (e.button === 1 || e.shiftKey || Core.state.activeLeftAction === "pan") { isPanning = true; return; }
-    if (Core.state.activeArea === "3d") isDragging = true;
-    else { isDrawing = true; handleDraw(e); }
-  });
+  canvas.setPointerCapture(e.pointerId);
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - rect.width / 2;
+  const y = e.clientY - rect.top - rect.height / 2;
+  const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+
+  activeModule?.onMouseDown?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+});
+
+canvas.addEventListener("pointermove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - rect.width / 2;
+  const y = e.clientY - rect.top - rect.height / 2;
+  const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+
+  activeModule?.onMouseMove?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+});
+
+canvas.addEventListener("pointerup", (e) => {
+  canvas.releasePointerCapture(e.pointerId);
+  activeModule?.onMouseUp?.();
+});
+
 
   function handleDraw(e) {
     const rect = canvas.getBoundingClientRect();
