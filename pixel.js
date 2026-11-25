@@ -738,17 +738,11 @@
   }
 
   // =========================================================================
-  // MOTOR DE PINCÉIS KRITA (Esboço, Aquarela & Pincéis RGBA com Caneta)
+  // MOTOR DE PINCÉIS KRITA (Esboço, Aquarela & Pincéis RGBA)
   // =========================================================================
-  function paintKritaStroke(x0, y0, x1, y1, penData = {}) {
+  function paintKritaStroke(x0, y0, x1, y1) {
     const brush = state.kr.brushType;
-    const isPen = penData.pointerType === "pen";
-    const pressure = isPen ? Math.max(0.1, penData.pressure ?? 0.5) : 0.65;
-
-    // A pressão da caneta modula o tamanho e a densidade do pigmento
-    const size = isPen ? state.kr.size * (0.35 + pressure * 1.15) : state.kr.size;
-    const alphaScale = isPen ? 0.35 + pressure * 0.9 : 1;
-
+    const size = state.kr.size;
     const color = state.kr.color;
     const dist = Math.hypot(x1 - x0, y1 - y0);
     const steps = Math.max(1, Math.ceil(dist / Math.max(1, size * 0.18)));
@@ -776,7 +770,7 @@
         const grainCount = brush === "krCharcoal" ? 18 : 8;
         const radius = brush === "krCharcoal" ? size * 0.45 : Math.max(1.2, size * 0.14);
         paintCtx.fillStyle = color;
-        paintCtx.globalAlpha = Math.min(1, (brush === "krCharcoal" ? 0.24 : 0.45) * alphaScale);
+        paintCtx.globalAlpha = brush === "krCharcoal" ? 0.24 : 0.45;
         for (let g = 0; g < grainCount; g++) {
           const jx = (Math.random() - 0.5) * radius * 2;
           const jy = (Math.random() - 0.5) * radius * 2;
@@ -790,14 +784,14 @@
         paintCtx.fill();
       } else if (brush === "krWatercolorWash" || brush === "krWatercolorEdge") {
         const r = size * 0.85;
-        paintCtx.globalAlpha = Math.min(0.35, 0.06 * alphaScale);
+        paintCtx.globalAlpha = 0.06;
         paintCtx.fillStyle = color;
         paintCtx.beginPath();
         paintCtx.arc(px, py, r, 0, Math.PI * 2);
         paintCtx.fill();
 
         if (brush === "krWatercolorEdge") {
-          paintCtx.globalAlpha = Math.min(0.5, 0.14 * alphaScale);
+          paintCtx.globalAlpha = 0.14;
           paintCtx.strokeStyle = color;
           paintCtx.lineWidth = 1.2;
           paintCtx.beginPath();
@@ -805,7 +799,7 @@
           paintCtx.stroke();
         }
       } else if (brush === "krWaterBlender") {
-        paintCtx.globalAlpha = Math.min(0.3, 0.08 * alphaScale);
+        paintCtx.globalAlpha = 0.08;
         paintCtx.fillStyle = "#FAF7F0";
         paintCtx.beginPath();
         paintCtx.arc(px, py, size * 0.9, 0, Math.PI * 2);
@@ -815,7 +809,7 @@
           const grad = paintCtx.createRadialGradient(px, py, 1, px, py, size);
           grad.addColorStop(0, color);
           grad.addColorStop(1, "rgba(250,247,240,0)");
-          paintCtx.globalAlpha = Math.min(0.45, 0.16 * alphaScale);
+          paintCtx.globalAlpha = 0.16;
           paintCtx.fillStyle = grad;
           paintCtx.beginPath();
           paintCtx.arc(px, py, size, 0, Math.PI * 2);
@@ -824,7 +818,7 @@
           const bristles = brush === "krRgbaBristle" ? 9 : 5;
           paintCtx.strokeStyle = color;
           paintCtx.lineWidth = brush === "krRgbaBristle" ? 1.4 : size * 0.35;
-          paintCtx.globalAlpha = Math.min(1, (brush === "krRgbaBristle" ? 0.35 : 0.65) * alphaScale);
+          paintCtx.globalAlpha = brush === "krRgbaBristle" ? 0.35 : 0.65;
           for (let b = 0; b < bristles; b++) {
             const off = ((b / bristles) - 0.5) * size;
             paintCtx.beginPath();
@@ -838,7 +832,6 @@
 
     paintCtx.restore();
   }
-
 
   // =========================================================================
   // RENDERIZAÇÃO DO QUADRO PIXEL NO PALCO CENTRAL

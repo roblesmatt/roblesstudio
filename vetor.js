@@ -1699,6 +1699,7 @@
     }
   }
 
+
   function handlePointerUp() {
     if (state.dragStart) {
       state.dragStart = null;
