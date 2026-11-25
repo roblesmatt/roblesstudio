@@ -930,7 +930,7 @@
     };
   }
 
-    function handlePointerDown(x, y, penData = {}) {
+  function handlePointerDown(x, y) {
     const tool = getCurrentToolId();
     const { cx, cy } = toCanvasCoords(x, y);
 
@@ -938,7 +938,7 @@
       state.kr.isDrawing = true;
       state.kr.lastX = cx;
       state.kr.lastY = cy;
-      paintKritaStroke(cx, cy, cx, cy, penData);
+      paintKritaStroke(cx, cy, cx, cy);
       syncWithCore();
     } else if (state.submode === "manipulacao") {
       state.pc.isDragging = true;
@@ -949,35 +949,6 @@
       }
     }
   }
-
-  function handlePointerMove(x, y, penData = {}) {
-    const tool = getCurrentToolId();
-    const { cx, cy } = toCanvasCoords(x, y);
-
-    if (state.kr.isDrawing && (state.submode === "pintura" || tool === "pcEraser")) {
-      paintKritaStroke(state.kr.lastX, state.kr.lastY, cx, cy, penData);
-      state.kr.lastX = cx;
-      state.kr.lastY = cy;
-      syncWithCore();
-    } else if (state.pc.isDragging && state.submode === "manipulacao") {
-      if (tool === "pcMoveLayer") {
-        state.pc.offsetX += x - state.pc.dragStartX;
-        state.pc.offsetY += y - state.pc.dragStartY;
-        state.pc.dragStartX = x;
-        state.pc.dragStartY = y;
-      } else if (tool === "pcMarqueeRect" && state.pc.selection) {
-        state.pc.selection.w = x - state.pc.dragStartX;
-        state.pc.selection.h = y - state.pc.dragStartY;
-      }
-      syncWithCore();
-    }
-  }
-
-  function handlePointerUp() {
-    state.kr.isDrawing = false;
-    state.pc.isDragging = false;
-  }
-
 
   function handlePointerMove(x, y) {
     const tool = getCurrentToolId();
