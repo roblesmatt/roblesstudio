@@ -86,7 +86,7 @@
   }
 
   const state = {
-    activeArea: "3d",
+    activeArea: "vector",
     activePreset: "Paramétrico",
     activeLeftAction: "transform",
     activeSecondaryAction: "tf-move",
