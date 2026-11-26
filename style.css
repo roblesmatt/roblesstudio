@@ -524,3 +524,528 @@ body {
   font-weight: 500;
   color: rgba(0, 0, 0, 0.52);
 }
+
+
+
+
+.tool-btn {
+  position: relative;
+}
+
+/* Cartão oculto por padrão */
+.tool-tip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  width: 225px;
+  display: block;
+  box-sizing: border-box;
+  background: #1c1917;
+  color: #f5f0e6;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 999;
+  text-align: left;
+  white-space: normal;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Aparece no hover centrado verticalmente com o botão */
+.tool-btn:hover .tool-tip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Se estiver na barra direita, abre para a esquerda */
+.hud-right .tool-tip {
+  left: auto;
+  right: calc(100% + 12px);
+  transform: translateY(-50%) translateX(4px);
+}
+.hud-right .tool-btn:hover .tool-tip {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Se estiver na barra do topo, abre para baixo */
+.hud-top-center .tool-tip,
+.hud-top-right .tool-tip,
+.hud-top-left .tool-tip {
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translateX(-50%) translateY(-4px);
+}
+.hud-top-center .tool-btn:hover .tool-tip,
+.hud-top-right .tool-btn:hover .tool-tip,
+.hud-top-left .tool-btn:hover .tool-tip {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Área do GIF / Imagem (esconde totalmente se não tiver src) */
+.tool-tip img {
+  width: 100%;
+  height: 112px;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  background: #0c0a09;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tool-tip img[src=""],
+.tool-tip img:not([src]) {
+  display: none !important;
+}
+
+/* Espaçamento interno garantido */
+.tool-tip-body {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+}
+
+.tool-tip-title {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f59e0b;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.tool-tip-desc {
+  display: block;
+  margin: 5px 0 0 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: #d6d3d1;
+  line-height: 1.4;
+  white-space: normal;
+}
+.tool-tip-desc:empty {
+  display: none;
+}
+
+
+
+
+/* Barra superior central (Desktop: todos visíveis e centralizados) */
+.hud-top-center {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  z-index: 32;
+}
+
+.hud-top-center .tool-btn {
+  flex-shrink: 0;
+}
+
+/* Mobile: vira carrossel horizontal centralizado mostrando 2,5 ícones */
+@media (max-width: 768px) {
+  .hud-top-center {
+    top: 52px;
+    display: flex;
+    width: 98px; /* 2 botões (~34px) + gaps + meio botão (17px) = 2,5 ícones visíveis */
+    max-width: 98px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    gap: 2px;
+    padding: 3px;
+ 
+  }
+
+  .hud-top-center::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hud-top-center .tool-btn {
+    scroll-snap-align: start;
+  }
+}
+
+
+
+/* =========================================================
+   SISTEMA MESTRE DE POSICIONAMENTO DA HUD (ROBLES STUDIO)
+   ========================================================= */
+:root {
+  --hud-margin: 14px;
+  --hud-row-1: 14px;
+  --hud-row-2: 64px;
+  --hud-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --hud-margin: 10px;
+    --hud-row-1: 10px;
+    --hud-row-2: 56px;
+    --hud-bottom: 10px;
+  }
+}
+
+/* Base uniforme para TODAS as pílulas */
+.hud-pill {
+  position: fixed !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 !important;
+  box-sizing: border-box;
+  z-index: 30;
+}
+
+/* 1. TOPO ESQUERDO: Personas (Vetor / Pixel / Vídeo / 3D) */
+.hud-top-left {
+  top: var(--hud-row-1) !important;
+  left: var(--hud-margin) !important;
+  right: auto !important;
+  flex-direction: row !important;
+}
+
+/* 2. TOPO CENTRO: Ações Globais (Desfazer / Colar / Copiar / Duplicar / Ajuste / Refazer) */
+.hud-top-center {
+  top: var(--hud-row-1) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  flex-direction: row !important;
+}
+
+/* 3. TOPO DIREITO: Sub-modos (Normal / Tipografia / Layout) */
+.hud-top-right {
+  top: var(--hud-row-1) !important;
+  right: var(--hud-margin) !important;
+  left: auto !important;
+  flex-direction: row !important;
+}
+
+/* 4. LATERAL ESQUERDA: Ferramentas Primárias */
+.hud-left {
+  top: var(--hud-row-2) !important;
+  left: var(--hud-margin) !important;
+  right: auto !important;
+  flex-direction: column !important;
+  padding: 4px !important;
+}
+
+/* 5. LATERAL DIREITA: Ferramentas Secundárias */
+.hud-right {
+  top: var(--hud-row-2) !important;
+  right: var(--hud-margin) !important;
+  left: auto !important;
+  flex-direction: column !important;
+  padding: 4px !important;
+}
+
+/* 6. INFERIOR ESQUERDO: Salvar / Configurações / Exportar */
+.hud-bottom-left,
+#core-bottom-left-bar {
+  bottom: var(--hud-bottom) !important;
+  left: var(--hud-margin) !important;
+  top: auto !important;
+  right: auto !important;
+  flex-direction: row !important;
+}
+
+/* 7. INFERIOR DIREITO: Camadas / Medidas / Histórico */
+.hud-bottom-right,
+#core-bottom-right-bar {
+  bottom: var(--hud-bottom) !important;
+  right: var(--hud-margin) !important;
+  top: auto !important;
+  left: auto !important;
+  flex-direction: row !important;
+}
+
+/* =========================================================
+   RESPONSIVO MOBILE: CARROSSÉIS HORIZONTAIS NO TOPO
+   ========================================================= */
+@media (max-width: 768px) {
+  /* Personas no topo esquerdo (2,5 ícones) */
+  .hud-top-left {
+    display: flex !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: 2px !important;
+    padding: 3px !important;
+  
+  }
+  .hud-top-left::-webkit-scrollbar { display: none; }
+
+  /* Ações globais no topo centro (2,5 ícones perfeitamente alinhados na linha 1) */
+  .hud-top-center {
+    display: flex !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: 2px !important;
+    padding: 3px !important;
+
+  }
+  .hud-top-center::-webkit-scrollbar { display: none; }
+
+  /* Sub-modos no topo direito */
+  .hud-top-right {
+    gap: 2px !important;
+    padding: 3px !important;
+  }
+
+  .hud-top-left .tool-btn,
+  .hud-top-center .tool-btn {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+}
+
+
+
+
+/* Caixa de configuração centralizada na parte inferior no estilo do Robles Studio */
+/* Caixa de configuração centralizada na parte inferior no estilo do Robles Studio */
+.robles-bottom-sheet {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 95;
+  display: none;
+  flex-direction: column;
+  width: min(460px, calc(100vw - 160px));
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(212, 206, 192, 0.96);
+  border: 1px solid rgba(61, 45, 45, 0.18);
+  box-shadow: 0 12px 32px rgba(61, 45, 45, 0.14);
+  backdrop-filter: blur(14px);
+  color: #3d2d2d;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.robles-bottom-sheet .rbs-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(61, 45, 45, 0.06);
+  border: 1px solid rgba(61, 45, 45, 0.12);
+  margin-bottom: 10px;
+}
+
+.robles-bottom-sheet .rbs-tab {
+  border: none;
+  background: transparent;
+  color: #3d2d2d;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 4px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.robles-bottom-sheet .rbs-tab.is-active {
+  background: #181615;
+  color: #cec8b8;
+}
+
+.robles-bottom-sheet .rbs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(61, 45, 45, 0.14);
+}
+
+.robles-bottom-sheet .rbs-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.robles-bottom-sheet .rbs-close-btn {
+  border: 1px solid rgba(61, 45, 45, 0.18);
+  background: rgba(61, 45, 45, 0.06);
+  color: #3d2d2d;
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.robles-bottom-sheet .rbs-close-btn:active {
+  background: #181615;
+  color: #cec8b8;
+}
+
+.robles-bottom-sheet .rbs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.robles-bottom-sheet .rbs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.robles-bottom-sheet .rbs-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(61, 45, 45, 0.8);
+}
+
+.robles-bottom-sheet .rbs-val {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.robles-bottom-sheet .rbs-inline {
+  display: flex;
+  gap: 6px;
+}
+
+/* Inputs e Selects 100% sem fundo branco, no mesmo tom bege do painel */
+.robles-bottom-sheet input[type="number"],
+.robles-bottom-sheet select {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background-color: rgba(61, 45, 45, 0.06);
+  border: 1px solid rgba(61, 45, 45, 0.18);
+  border-radius: 8px;
+  color: #1c1917;
+  font: 700 11px ui-monospace, monospace;
+  padding: 5px 8px;
+  outline: none;
+  box-shadow: none;
+}
+
+.robles-bottom-sheet select {
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%233d2d2d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  background-size: 10px;
+}
+
+.robles-bottom-sheet input[type="number"]:focus,
+.robles-bottom-sheet select:focus {
+  border-color: #181615;
+  background-color: rgba(61, 45, 45, 0.1);
+}
+
+/* Remove setinhas internas do input number */
+.robles-bottom-sheet input[type="number"]::-webkit-inner-spin-button,
+.robles-bottom-sheet input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Sliders em barras verticais segmentadas (Teenage Engineering / dial) */
+.robles-bottom-sheet input[type="range"].rbs-tick-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+  margin: 2px 0;
+  --pct: 25%;
+}
+
+.robles-bottom-sheet input[type="range"].rbs-tick-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 14px;
+  background: linear-gradient(
+    to right,
+    #181615 0%,
+    #181615 var(--pct),
+    rgba(61, 45, 45, 0.22) var(--pct),
+    rgba(61, 45, 45, 0.22) 100%
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to right,
+    #000 0px,
+    #000 2px,
+    transparent 2px,
+    transparent 5px
+  );
+  mask-image: repeating-linear-gradient(
+    to right,
+    #000 0px,
+    #000 2px,
+    transparent 2px,
+    transparent 5px
+  );
+}
+
+.robles-bottom-sheet input[type="range"].rbs-tick-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 4px;
+  height: 18px;
+  background: transparent;
+  opacity: 0;
+}
+
+.robles-bottom-sheet input[type="range"].rbs-tick-slider::-moz-range-track {
+  width: 100%;
+  height: 14px;
+  background: linear-gradient(
+    to right,
+    #181615 0%,
+    #181615 var(--pct),
+    rgba(61, 45, 45, 0.22) var(--pct),
+    rgba(61, 45, 45, 0.22) 100%
+  );
+  mask-image: repeating-linear-gradient(
+    to right,
+    #000 0px,
+    #000 2px,
+    transparent 2px,
+    transparent 5px
+  );
+}
+
+.robles-bottom-sheet input[type="range"].rbs-tick-slider::-moz-range-thumb {
+  width: 2px;
+  height: 16px;
+  border: none;
+  background: transparent;
+}

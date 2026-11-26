@@ -201,29 +201,32 @@
     ctx.fillText(`ROBLES STUDIO · ${Core.getAreaMeta().label.toUpperCase()} (${Core.state.activePreset}) · StudioLink Ativo`, 16, h - 62);
   }
 
-  canvas.addEventListener("pointerdown", (e) => {
-  canvas.setPointerCapture(e.pointerId);
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left - rect.width / 2;
-  const y = e.clientY - rect.top - rect.height / 2;
-  const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+canvas.addEventListener("pointerdown", (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+    const activeModule = Core.modules[Core.state.activeArea];
 
-  activeModule?.onMouseDown?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
-});
+    activeModule?.onMouseDown?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+  });
 
-canvas.addEventListener("pointermove", (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left - rect.width / 2;
-  const y = e.clientY - rect.top - rect.height / 2;
-  const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+  canvas.addEventListener("pointermove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
+    const activeModule = Core.modules[Core.state.activeArea];
 
-  activeModule?.onMouseMove?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
-});
+    activeModule?.onMouseMove?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+  });
 
-canvas.addEventListener("pointerup", (e) => {
-  canvas.releasePointerCapture(e.pointerId);
-  activeModule?.onMouseUp?.();
-});
+  canvas.addEventListener("pointerup", (e) => {
+    canvas.releasePointerCapture(e.pointerId);
+    const activeModule = Core.modules[Core.state.activeArea];
+    activeModule?.onMouseUp?.();
+  });
 
 
   function handleDraw(e) {

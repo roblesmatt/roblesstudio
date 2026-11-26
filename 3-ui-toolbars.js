@@ -4,9 +4,42 @@
 
   const leftSidebar = document.querySelector(".hud-left");
   let rightSidebar = document.querySelector(".hud-right");
+  let topCenterBar = document.querySelector(".hud-top-center");
   let bottomLeftBar = document.getElementById("core-bottom-left-bar");
-  let leftMirrorBar = document.getElementById("core-left-mirror-bar");
   let settingsPopover = null;
+
+  const GLOBAL_EDIT_ACTIONS = [
+    {
+      id: "undo",
+      label: "Desfazer (Ctrl+Z)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
+    },
+    {
+      id: "paste",
+      label: "Colar (Ctrl+V)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>`,
+    },
+    {
+      id: "copy",
+      label: "Copiar (Ctrl+C)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    },
+    {
+      id: "duplicate",
+      label: "Duplicar (Ctrl+D)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/><path d="M14 11v6M11 14h6"/></svg>`,
+    },
+    {
+      id: "snap",
+      label: "Ajuste Magnético (Snap)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15V9a6 6 0 1 1 12 0v6"/><path d="M6 15h4v4H6z"/><path d="M14 15h4v4h-4z"/></svg>`,
+    },
+    {
+      id: "redo",
+      label: "Refazer (Ctrl+Y)",
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>`,
+    },
+  ];
 
   const SECONDARY_TOOLS = {
     pan: [
@@ -32,14 +65,106 @@
     ],
   };
 
-  // Ferramentas extras da barra inferior esquerda espelhada (logo acima de Salvar/Config/Exportar)
-  const MIRROR_LEFT_TOOLS = [
-    { id: "undo", label: "Desfazer", icon: "↶" },
-    { id: "redo", label: "Refazer", icon: "↷" },
-    { id: "snap", label: "Imã / Snap", icon: "🧲", toggle: true },
-    { id: "grid", label: "Alternar Grade", icon: "⊞", toggle: true },
-    { id: "fit", label: "Centralizar Câmera", icon: "⊡" },
-  ];
+  function renderTopCenterGlobalBar() {
+    function renderTopCenterGlobalBar() {
+    if (!topCenterBar) {
+      topCenterBar = document.createElement("nav");
+      topCenterBar.className = "hud-pill hud-top-center";
+      topCenterBar.setAttribute("aria-label", "Ações globais de edição");
+      document.querySelector(".viewport, .studio-shell, body")?.appendChild(topCenterBar);
+    }
+
+    const snapActive = Boolean(Core.state.settings.snapEnabled);
+
+    topCenterBar.innerHTML = GLOBAL_EDIT_ACTIONS.map((act) => {
+      const isActive = act.id === "snap" && snapActive;
+      return `
+        <button
+          type="button"
+          class="tool-btn ${isActive ? "is-active" : ""}"
+          data-global-cmd="${act.id}"
+          title="${act.label}"
+        >${act.icon}</button>
+      `;
+    }).join("");
+
+    // Permite arrastar com o mouse além do dedo/Apple Pencil
+    if (!topCenterBar.dataset.carouselBound) {
+      topCenterBar.dataset.carouselBound = "true";
+      let isDown = false, startX = 0, startScrollLeft = 0, moved = false;
+
+      topCenterBar.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "touch") return;
+        isDown = true;
+        moved = false;
+        startX = e.clientX;
+        startScrollLeft = topCenterBar.scrollLeft;
+        topCenterBar.style.scrollBehavior = "auto";
+      });
+
+      window.addEventListener("pointermove", (e) => {
+        if (!isDown) return;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 4) moved = true;
+        topCenterBar.scrollLeft = startScrollLeft - dx;
+      });
+
+      window.addEventListener("pointerup", () => {
+        if (!isDown) return;
+        isDown = false;
+        topCenterBar.style.scrollBehavior = "smooth";
+        if (moved) {
+          topCenterBar.dataset.justDragged = "true";
+          setTimeout(() => { topCenterBar.dataset.justDragged = "false"; }, 60);
+        }
+      });
+    }
+
+    topCenterBar.querySelectorAll("[data-global-cmd]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (topCenterBar.dataset.justDragged === "true") return;
+        Core.dispatchCommand(btn.dataset.globalCmd);
+        renderTopCenterGlobalBar();
+      });
+    });
+  }
+    const mobile = Core.isMobile();
+    const snapActive = Boolean(Core.state.settings.snapEnabled);
+
+    topCenterBar.style.cssText = `
+      position: fixed;
+      top: ${mobile ? "52px" : "14px"};
+      left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      gap: ${mobile ? "2px" : "4px"};
+      padding: ${mobile ? "3px" : "4px"};
+      z-index: 32;
+    `;
+
+    topCenterBar.innerHTML = GLOBAL_EDIT_ACTIONS.map((act) => {
+      const isActive = act.id === "snap" && snapActive;
+      return `
+        <button
+          type="button"
+          class="tool-btn ${isActive ? "is-active" : ""}"
+          data-global-cmd="${act.id}"
+          title="${act.label}"
+        >${act.icon}</button>
+      `;
+    }).join("");
+
+    topCenterBar.querySelectorAll("[data-global-cmd]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        Core.dispatchCommand(btn.dataset.globalCmd);
+        renderTopCenterGlobalBar();
+      });
+    });
+  }
 
   function renderLeftToolbar() {
     if (!leftSidebar) return;
@@ -142,60 +267,11 @@
     settingsPopover.querySelector("[data-close]")?.addEventListener("click", () => toggleSettingsPopover(false));
     settingsPopover.querySelector("[data-grid]")?.addEventListener("change", (e) => {
       s.showGrid = e.target.checked;
-      renderMirrorLeftBar();
       Core.emit("render:request");
     });
     settingsPopover.querySelector("[data-sync]")?.addEventListener("change", (e) => {
       s.liveSync2Dto3D = e.target.checked;
       Core.emit("render:request");
-    });
-  }
-
-  // Barra vertical espelhada no lado inferior esquerdo (acima de Salvar/Config/Exportar)
-  function renderMirrorLeftBar() {
-    if (!leftMirrorBar) {
-      leftMirrorBar = document.createElement("aside");
-      leftMirrorBar.id = "core-left-mirror-bar";
-      leftMirrorBar.className = "hud-pill";
-      document.querySelector(".viewport, .studio-shell, body")?.appendChild(leftMirrorBar);
-    }
-
-    const mobile = Core.isMobile();
-    leftMirrorBar.style.cssText = `
-      position:fixed; display:flex; flex-direction:column; align-items:center;
-      bottom:${mobile ? "56px" : "66px"}; left:${mobile ? "10px" : "14px"};
-      gap:${mobile ? "2px" : "4px"}; padding:${mobile ? "3px" : "4px"}; z-index:30;
-    `;
-
-    leftMirrorBar.innerHTML = MIRROR_LEFT_TOOLS.map((t) => {
-      const isActive =
-        (t.id === "grid" && Core.state.settings.showGrid) ||
-        (t.id === "snap" && Core.state.settings.snapEnabled);
-      return `
-        <button type="button" class="tool-btn ${isActive ? "is-active" : ""}" data-mirror="${t.id}" title="${t.label}" style="font-size:13px;">
-          ${t.icon}
-        </button>`;
-    }).join("");
-
-    leftMirrorBar.querySelectorAll("[data-mirror]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const act = btn.dataset.mirror;
-        if (act === "grid") {
-          Core.state.settings.showGrid = !Core.state.settings.showGrid;
-        } else if (act === "snap") {
-          Core.state.settings.snapEnabled = !Core.state.settings.snapEnabled;
-        } else if (act === "fit") {
-          Object.assign(Core.state.camera, Core.state.defaultCamera);
-          Object.assign(Core.state.camera2D, { zoom: 1, panX: 0, panY: 0 });
-        } else if (act === "undo") {
-          Core.recordHistory(Core.state.activeArea, "Desfazer ação");
-        } else if (act === "redo") {
-          Core.recordHistory(Core.state.activeArea, "Refazer ação");
-        }
-        renderMirrorLeftBar();
-        Core.emit("render:request");
-      });
     });
   }
 
@@ -245,15 +321,27 @@
     `;
   }
 
+  window.addEventListener("keydown", (e) => {
+    if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    const map = { z: e.shiftKey ? "redo" : "undo", y: "redo", c: "copy", v: "paste", d: "duplicate" };
+    if (map[k]) {
+      e.preventDefault();
+      Core.dispatchCommand(map[k]);
+      renderTopCenterGlobalBar();
+    }
+  });
+
+  Core.on("ui:update", renderTopCenterGlobalBar);
+
+  renderTopCenterGlobalBar();
   renderLeftToolbar();
   renderRightToolbar();
-  renderMirrorLeftBar();
   renderBottomLeftBar();
   window.addEventListener("resize", () => {
+    renderTopCenterGlobalBar();
     renderRightToolbar();
-    renderMirrorLeftBar();
     renderBottomLeftBar();
   });
 })();
-
-

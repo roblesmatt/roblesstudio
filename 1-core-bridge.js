@@ -155,6 +155,28 @@
       this.invalidateAll();
     },
 
+    dispatchCommand(command) {
+      if (command === "snap") {
+        state.settings.snapEnabled = !state.settings.snapEnabled;
+        this.recordHistory(
+          state.activeArea,
+          state.settings.snapEnabled ? "Ajuste ativado" : "Ajuste desativado"
+        );
+        this.emit("ui:update");
+        this.emit("render:request");
+        return;
+      }
+
+      const activeMod = modules[state.activeArea];
+      if (activeMod && typeof activeMod.onCommand === "function") {
+        activeMod.onCommand(command);
+      } else {
+        this.recordHistory(state.activeArea, `Ação: ${command}`);
+      }
+      this.emit("ui:update");
+      this.emit("render:request");
+    },
+    
     on(event, fn) {
       if (!listeners.has(event)) listeners.set(event, new Set());
       listeners.get(event).add(fn);
