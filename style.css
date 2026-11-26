@@ -1023,7 +1023,7 @@ body {
 /* =========================================================
    AJUSTES FINAIS (iPad, sem branco nativo, variÃ¡veis faltantes)
    ========================================================= */
-:root { --shadow-hud: 0 6px 18px rgba(61, 45, 45, 0.16); }
+:root { --shadow-hud: none; }
 
 html, body {
   -webkit-touch-callout: none;

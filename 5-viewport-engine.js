@@ -103,7 +103,6 @@
     ctx.scale(view.zoom, view.zoom);
     ctx.rotate(M.rot);
     ctx.scale(M.sc, M.sc);
-    if (area() === 'vector' && Core.state.settings.showGrid) drawGrid();
     try { m.render(ctx, 0, 0); } catch (err) {
       if (!warned.has('render' + area())) { warned.add('render' + area()); console.error('[Robles] erro em ' + area() + '.render', err); }
     }
