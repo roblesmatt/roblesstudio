@@ -10,7 +10,6 @@
     </svg>
   `;
 
-  // Toast superior discreto para feedback imediato nos ciclos e no scrubbing
   function showCycleBadge(text) {
     let badge = document.getElementById("robles-cycle-toast");
     if (!badge) {
@@ -39,7 +38,7 @@
     clearTimeout(badge._timer);
     badge._timer = setTimeout(() => {
       badge.style.opacity = "0";
-    }, 1200);
+    }, 1100);
   }
 
   function computeOffsetPolygon(points, offset) {
@@ -116,271 +115,245 @@
     }
   }
 
-  // =========================================================================
-  // NÍVEL 2: SCRUBBING (Arrastar dedo/Apple Pencil sobre o botão da barra direita)
-  // =========================================================================
-  function bindButtonScrubbing(ctx) {
-    const rightBar = document.querySelector(".hud-right");
-    if (!rightBar) return;
+  function applyAlignState(current, nextState) {
+    if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
+    current._cycleAlignState = nextState;
+    const sw = current.strokeWidth || 2.2;
+    if (!current._baseAlignPoints) {
+      current._baseAlignPoints = current.points.map((p) => ({ x: p.x, y: p.y }));
+    }
 
-    rightBar.style.display = "flex";
-    rightBar.style.flexDirection = "column";
-    rightBar.style.gridTemplateColumns = "";
-    rightBar.style.overflow = "visible";
-
-    const scrubTargets = ["strokeWidthStep", "contourInteractive"];
-    scrubTargets.forEach((variantId) => {
-      const btn = rightBar.querySelector(`[data-vec-variant="${variantId}"]`);
-      if (!btn || btn.dataset.scrubBound === "true") return;
-      btn.dataset.scrubBound = "true";
-
-      btn.addEventListener("pointerdown", (e) => {
-        const sel = ctx.getSelectedPath();
-        if (!sel) return;
-
-        const startX = e.clientX;
-        const startWidth = sel.strokeWidth ?? 2;
-        const startOffset = ctx.state._lastContourOffset || 0;
-        const basePts = Array.isArray(sel.points) ? sel.points.map((p) => ({ x: p.x, y: p.y })) : null;
-        let didScrub = false;
-
-        const onMove = (ev) => {
-          const dx = ev.clientX - startX;
-          if (!didScrub && Math.abs(dx) < 6) return;
-
-          if (!didScrub) {
-            didScrub = true;
-            ctx.snapshot();
-          }
-
-          if (variantId === "strokeWidthStep") {
-            const nextW = Math.max(0, Math.min(24, Math.round((startWidth + dx * 0.12) * 10) / 10));
-            if (nextW > 0 && (!sel.stroke || sel.stroke === "transparent")) {
-              sel.stroke = ctx.state.activeStroke || "#3d2d2d";
-            }
-            sel.strokeWidth = nextW;
-            showCycleBadge(`Largura: ${nextW.toFixed(1)} pt`);
-          } else if (variantId === "contourInteractive" && basePts && basePts.length >= 3) {
-            const nextOff = Math.max(-60, Math.min(120, Math.round(startOffset + dx * 0.5)));
-            ctx.state._lastContourOffset = nextOff;
-            sel.points = computeOffsetPolygon(basePts, nextOff);
-            sel._baseAlignPoints = sel.points.map((p) => ({ x: p.x, y: p.y }));
-            showCycleBadge(`Offset: ${nextOff > 0 ? "+" + nextOff : nextOff} px`);
-          }
-
-          ctx.sync();
-        };
-
-        const onUp = () => {
-          window.removeEventListener("pointermove", onMove);
-          window.removeEventListener("pointerup", onUp);
-          if (didScrub) {
-            btn.dataset.suppressClick = "true";
-            setTimeout(() => {
-              btn.dataset.suppressClick = "false";
-            }, 60);
-          }
-        };
-
-        window.addEventListener("pointermove", onMove);
-        window.addEventListener("pointerup", onUp);
-      });
-    });
+    if (nextState === "inside") {
+      current.points = computeOffsetPolygon(current._baseAlignPoints, -sw * 0.5);
+      current.strokeBehind = false;
+    } else if (nextState === "outside") {
+      current.points = computeOffsetPolygon(current._baseAlignPoints, sw * 0.5);
+      current.strokeBehind = false;
+    } else if (nextState === "center-behind") {
+      current.points = current._baseAlignPoints.map((p) => ({ x: p.x, y: p.y }));
+      current.strokeBehind = true;
+    } else {
+      current.points = current._baseAlignPoints.map((p) => ({ x: p.x, y: p.y }));
+      current.strokeBehind = false;
+    }
   }
 
   // =========================================================================
-  // NÍVEL 3: BOTTOM SHEET CENTRAL (Estilo Histórico + Sliders em Barras Verticais)
+  // CÁPSULA LATERAL UNIFICADA (Régua Vertical para Valores + Opções para Modos)
   // =========================================================================
-  function syncContourSheet(ctx) {
-    let sheet = document.getElementById("robles-contour-sheet");
-    const isContourActive = ctx.ws?.activeFamilyId === "contourGroup";
+  function syncContourSidePopover(ctx) {
+    const rightBar = document.querySelector(".hud-right");
+    if (rightBar) {
+      rightBar.style.display = "flex";
+      rightBar.style.flexDirection = "column";
+      rightBar.style.gridTemplateColumns = "";
+      rightBar.style.overflow = "visible";
+    }
 
-    if (!isContourActive || !ctx.state._contourSheetOpen) {
-      if (sheet) sheet.style.display = "none";
+    let pop = document.getElementById("robles-contour-side-popover");
+    const isContourActive = ctx.ws?.activeFamilyId === "contourGroup";
+    const mode = ctx.state._sidePopoverMode;
+
+    if (!isContourActive || !mode) {
+      if (pop) pop.style.display = "none";
       return;
     }
 
-    if (!sheet) {
-      sheet = document.createElement("div");
-      sheet.id = "robles-contour-sheet";
-      sheet.className = "robles-bottom-sheet";
-      document.body.appendChild(sheet);
+    if (!pop) {
+      pop = document.createElement("div");
+      pop.id = "robles-contour-side-popover";
+      pop.className = "robles-side-popover";
+      document.body.appendChild(pop);
     }
 
-    const current = ctx.getSelectedPath();
-    const b = current ? ctx.getPathBounds(current) : { cx: 0, cy: 0 };
-    const sw = current ? (current.strokeWidth ?? 2.2) : 2.2;
-    const miter = current ? (current.miterLimit ?? 1.5) : 1.5;
-    const offsetVal = ctx.state._lastContourOffset || 0;
-    const styleMode = !current || sw === 0 ? "none" : (current.dash?.length ? (current.dash[0] < 3 ? "dot" : "dash") : "solid");
-    const joinMode = current?.lineJoin || "round";
+    const sel = ctx.getSelectedPath();
+    const b = sel ? ctx.getPathBounds(sel) : { cx: 0, cy: 0 };
 
-    const swPct = Math.max(0, Math.min(100, (sw / 24) * 100));
-    const offPct = Math.max(0, Math.min(100, ((offsetVal + 40) / 100) * 100));
-
-    sheet.style.display = "flex";
-    sheet.innerHTML = `
-      <div class="rbs-tabs">
-        <button type="button" class="rbs-tab ${styleMode === "solid" ? "is-active" : ""}" data-style="solid">Sólido</button>
-        <button type="button" class="rbs-tab ${styleMode === "dash" ? "is-active" : ""}" data-style="dash">Tracejado</button>
-        <button type="button" class="rbs-tab ${styleMode === "dot" ? "is-active" : ""}" data-style="dot">Pontilhado</button>
-        <button type="button" class="rbs-tab ${styleMode === "none" ? "is-active" : ""}" data-style="none">Sem</button>
-      </div>
-
-      <div class="rbs-header">
-        <span class="rbs-title">Contorno &amp; Traçado</span>
-        <button type="button" class="rbs-close-btn" data-action="close">Fechar</button>
-      </div>
-
-      <div class="rbs-grid">
-        <div class="rbs-field">
-          <div class="rbs-label-row">
-            <span>Largura</span>
-            <span class="rbs-val" id="rbs-val-sw">${Number(sw).toFixed(1)} pt</span>
-          </div>
-          <input class="rbs-tick-slider" type="range" min="0" max="24" step="0.1" value="${sw}" style="--pct:${swPct}%" data-prop="strokeWidth">
-        </div>
-
-        <div class="rbs-field">
-          <div class="rbs-label-row">
-            <span>Offset Paralelo</span>
-            <span class="rbs-val" id="rbs-val-off">${offsetVal > 0 ? "+" + offsetVal : offsetVal} px</span>
-          </div>
-          <input class="rbs-tick-slider" type="range" min="-40" max="60" step="1" value="${offsetVal}" style="--pct:${offPct}%" data-prop="offset">
-        </div>
-
-        <div class="rbs-field">
-          <div class="rbs-label-row">
-            <span>Junção / Mitra</span>
-            <span class="rbs-val">${miter}</span>
-          </div>
-          <div class="rbs-inline">
-            <select data-prop="joinMode">
-              <option value="round" ${joinMode === "round" ? "selected" : ""}>Redonda</option>
-              <option value="bevel" ${joinMode === "bevel" ? "selected" : ""}>Chanfro</option>
-              <option value="miter" ${joinMode === "miter" ? "selected" : ""}>Mitra</option>
-            </select>
-            <input class="rbs-num" type="number" step="0.5" min="1" max="10" value="${miter}" data-prop="miterLimit">
-          </div>
-        </div>
-
-        <div class="rbs-field">
-          <div class="rbs-label-row">
-            <span>Posição X / Y</span>
-            <span class="rbs-val">${Math.round(b.cx)}, ${Math.round(b.cy)}</span>
-          </div>
-          <div class="rbs-inline">
-            <input class="rbs-num" type="number" step="1" value="${Math.round(b.cx)}" data-prop="posX">
-            <input class="rbs-num" type="number" step="1" value="${Math.round(b.cy)}" data-prop="posY">
-          </div>
-        </div>
-      </div>
-    `;
-
-    sheet.querySelectorAll("[data-style]").forEach((tab) => {
-      tab.onclick = () => {
-        const sel = ctx.getSelectedPath();
-        if (!sel) return;
-        const m = tab.dataset.style;
-        ctx.snapshot();
-        if (m === "none") {
-          sel.strokeWidth = 0;
-        } else {
-          if (!sel.stroke || sel.stroke === "transparent") sel.stroke = ctx.state.activeStroke || "#3d2d2d";
-          if (!sel.strokeWidth || sel.strokeWidth <= 0) sel.strokeWidth = 2.2;
-          sel.dash = m === "dash" ? [6, 4] : m === "dot" ? [1.5, 4.5] : [];
-        }
-        syncContourSheet(ctx);
-        ctx.sync();
-      };
-    });
-
-    sheet.querySelectorAll("input, select").forEach((el) => {
-      const handler = (e) => {
-        const sel = ctx.getSelectedPath();
-        if (!sel) return;
-        const prop = e.target.dataset.prop;
-
-        if (prop === "strokeWidth") {
-          const val = parseFloat(e.target.value) || 0;
-          e.target.style.setProperty("--pct", `${(val / 24) * 100}%`);
-          if (val > 0 && (!sel.stroke || sel.stroke === "transparent")) sel.stroke = ctx.state.activeStroke || "#3d2d2d";
-          sel.strokeWidth = val;
-          const lbl = sheet.querySelector("#rbs-val-sw");
-          if (lbl) lbl.textContent = `${val.toFixed(1)} pt`;
-        } else if (prop === "offset" && Array.isArray(sel.points)) {
-          const val = parseFloat(e.target.value) || 0;
-          e.target.style.setProperty("--pct", `${((val + 40) / 100) * 100}%`);
-          if (!sel._baseOffsetPts) sel._baseOffsetPts = sel.points.map((p) => ({ x: p.x, y: p.y }));
-          ctx.state._lastContourOffset = val;
-          sel.points = computeOffsetPolygon(sel._baseOffsetPts, val);
-          const lbl = sheet.querySelector("#rbs-val-off");
-          if (lbl) lbl.textContent = `${val > 0 ? "+" + val : val} px`;
-        } else if (prop === "joinMode") {
-          sel.lineJoin = e.target.value;
-        } else if (prop === "miterLimit") {
-          sel.miterLimit = parseFloat(e.target.value) || 1.5;
-        } else if (prop === "posX") {
-          const val = parseFloat(e.target.value) || 0;
-          const curB = ctx.getPathBounds(sel);
-          translatePath(sel, val - curB.cx, 0);
-        } else if (prop === "posY") {
-          const val = parseFloat(e.target.value) || 0;
-          const curB = ctx.getPathBounds(sel);
-          translatePath(sel, 0, val - curB.cy);
-        }
-        ctx.sync();
-      };
-      el.oninput = handler;
-      el.onchange = handler;
-    });
-
-    sheet.querySelector('[data-action="close"]').onclick = () => {
-      ctx.state._contourSheetOpen = false;
-      syncContourSheet(ctx);
-      ctx.sync();
+    // Alinha verticalmente ao botão ativo na barra direita
+    const variantMap = {
+      offset: "contourInteractive",
+      duplicate: "contourDuplicate",
+      style: "strokeStyleCycle",
+      width: "strokeWidthStep",
+      join: "strokeJoinCycle",
+      align: "strokeAlignOrderCycle",
+      posX: "contourPositionCycle",
+      posY: "contourPositionCycle",
+      miter: "strokeJoinCycle",
     };
-  }
+    const anchorBtn = rightBar?.querySelector(`[data-vec-variant="${variantMap[mode] || ""}"]`);
+    if (anchorBtn) {
+      const btnRect = anchorBtn.getBoundingClientRect();
+      const clampedTop = Math.max(135, Math.min(window.innerHeight - 145, btnRect.top + btnRect.height / 2));
+      pop.style.top = `${clampedTop}px`;
+    } else {
+      pop.style.top = "50%";
+    }
 
-  function isClickSuppressed(variantId) {
-    const btn = document.querySelector(`.hud-right [data-vec-variant="${variantId}"]`);
-    return btn?.dataset.suppressClick === "true";
-  }
+    pop.style.display = "flex";
 
-  const contourToolFamily = {
-    id: "contourGroup",
-    shortcut: "o",
-    submodes: ["normal", "typography", "layout"],
-    order: 4,
-    label: "Contornar & Traçado",
-    description: "Toque para ciclar, deslize sobre o botão para ajustar fino ou toque em •••.",
-    preview: "",
-
-    variants: [
-      {
-        id: "contourInteractive",
-        label: "Contorno Paralelo (O)",
-        description: "Arraste na tela (ou deslize sobre este ícone) para expandir/contrair o contorno.",
-        preview: "",
-        icon: CONTOUR_MAIN_ICON,
+    // 1. MODOS COM RÉGUA VERTICAL DE BARRINHAS SEGMENTADAS
+    const sliderConfigs = {
+      width: {
+        unit: "PT",
+        min: 0,
+        max: 24,
+        val: sel?.strokeWidth ?? 2,
+        format: (v) => Number(v).toFixed(1),
+        apply: (target, ratio) => {
+          const nextW = Math.round(ratio * 24 * 10) / 10;
+          if (nextW > 0 && (!target.stroke || target.stroke === "transparent")) {
+            target.stroke = ctx.state.activeStroke || "#3d2d2d";
+          }
+          target.strokeWidth = nextW;
+          return nextW;
+        },
       },
-      {
-        id: "contourDuplicate",
-        label: "Gerar Contorno (+14px / -12px)",
-        description: "1º toque cria contorno externo (+14px); 2º toque cria moldura interna (-12px).",
-        preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="3" y="3" width="18" height="18" rx="4" stroke-dasharray="3 2"/></svg>`,
-        onAction(ctx) {
-          const current = ctx.getSelectedPath();
-          if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
-          const offsets = [14, -12];
-          const step = (ctx.state._contourGenStep || 0) % offsets.length;
-          ctx.state._contourGenStep = step + 1;
+      offset: {
+        unit: "PX",
+        min: -40,
+        max: 60,
+        val: ctx.state._lastContourOffset || 0,
+        format: (v) => (v > 0 ? `+${Math.round(v)}` : `${Math.round(v)}`),
+        apply: (target, ratio) => {
+          if (!Array.isArray(target.points)) return 0;
+          const nextOff = Math.round(-40 + ratio * 100);
+          if (!target._baseOffsetPts) target._baseOffsetPts = target.points.map((p) => ({ x: p.x, y: p.y }));
+          ctx.state._lastContourOffset = nextOff;
+          target.points = computeOffsetPolygon(target._baseOffsetPts, nextOff);
+          target._baseAlignPoints = target.points.map((p) => ({ x: p.x, y: p.y }));
+          return nextOff;
+        },
+      },
+      posX: {
+        unit: "X",
+        min: -180,
+        max: 180,
+        val: Math.round(b.cx),
+        format: (v) => `${Math.round(v)}`,
+        apply: (target, ratio) => {
+          const nextX = Math.round(-180 + ratio * 360);
+          const curB = ctx.getPathBounds(target);
+          translatePath(target, nextX - curB.cx, 0);
+          return nextX;
+        },
+      },
+      posY: {
+        unit: "Y",
+        min: -180,
+        max: 180,
+        val: Math.round(b.cy),
+        format: (v) => `${Math.round(v)}`,
+        apply: (target, ratio) => {
+          const nextY = Math.round(-180 + ratio * 360);
+          const curB = ctx.getPathBounds(target);
+          translatePath(target, 0, nextY - curB.cy);
+          return nextY;
+        },
+      },
+    };
 
-          const val = offsets[step];
-          const copy = cloneAsOffsetShape(current, val);
+    if (sliderConfigs[mode]) {
+      const cfg = sliderConfigs[mode];
+      const pct = Math.max(0, Math.min(100, ((cfg.val - cfg.min) / (cfg.max - cfg.min)) * 100));
+      const axisToggleHtml = (mode === "posX" || mode === "posY")
+        ? `<button type="button" class="rsp-chip" id="rsp-axis-toggle">${mode === "posX" ? "X⇄Y" : "Y⇄X"}</button>`
+        : "";
+
+      pop.classList.remove("is-wide");
+      pop.innerHTML = `
+        <div class="rsp-val" id="rsp-val-num">${cfg.format(cfg.val)}</div>
+        <div class="rsp-unit">${cfg.unit}</div>
+        <div class="rsp-track" id="rsp-track" style="--pct:${pct}%"></div>
+        ${axisToggleHtml}
+        <button type="button" class="rsp-close" id="rsp-close">✕</button>
+      `;
+
+      const track = pop.querySelector("#rsp-track");
+      const valEl = pop.querySelector("#rsp-val-num");
+
+      const handleY = (clientY) => {
+        const target = ctx.getSelectedPath();
+        if (!target) return;
+        const rect = track.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (rect.bottom - clientY) / rect.height));
+        track.style.setProperty("--pct", `${ratio * 100}%`);
+        const newVal = cfg.apply(target, ratio);
+        valEl.textContent = cfg.format(newVal);
+        ctx.sync();
+      };
+
+      track.onpointerdown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        ctx.snapshot();
+        track.setPointerCapture(e.pointerId);
+        handleY(e.clientY);
+        track.onpointermove = (ev) => handleY(ev.clientY);
+        track.onpointerup = () => {
+          track.onpointermove = null;
+          track.onpointerup = null;
+        };
+      };
+
+      const axisBtn = pop.querySelector("#rsp-axis-toggle");
+      if (axisBtn) {
+        axisBtn.onclick = (e) => {
+          e.stopPropagation();
+          ctx.state._sidePopoverMode = mode === "posX" ? "posY" : "posX";
+          syncContourSidePopover(ctx);
+        };
+      }
+    } else {
+      // 2. MODOS DE SELEÇÃO RÁPIDA NA CÁPSULA VERTICAL
+      pop.classList.add("is-wide");
+      let optionsHtml = "";
+
+      if (mode === "duplicate") {
+        optionsHtml = `
+          <div class="rsp-unit">CÓPIA</div>
+          <button type="button" class="rsp-opt" data-dup="14">+14px</button>
+          <button type="button" class="rsp-opt" data-dup="28">+28px</button>
+          <button type="button" class="rsp-opt" data-dup="-12">-12px</button>
+        `;
+      } else if (mode === "style") {
+        const curStyle = !sel || (sel.strokeWidth ?? 2) === 0 ? "none" : (sel.dash?.length ? (sel.dash[0] < 3 ? "dot" : "dash") : "solid");
+        optionsHtml = `
+          <div class="rsp-unit">ESTILO</div>
+          <button type="button" class="rsp-opt ${curStyle === "solid" ? "is-active" : ""}" data-st="solid">Sólido</button>
+          <button type="button" class="rsp-opt ${curStyle === "dash" ? "is-active" : ""}" data-st="dash">Traço</button>
+          <button type="button" class="rsp-opt ${curStyle === "dot" ? "is-active" : ""}" data-st="dot">Ponto</button>
+          <button type="button" class="rsp-opt ${curStyle === "none" ? "is-active" : ""}" data-st="none">Sem</button>
+        `;
+      } else if (mode === "join") {
+        const curJoin = sel?.lineJoin || "round";
+        optionsHtml = `
+          <div class="rsp-unit">CANTO</div>
+          <button type="button" class="rsp-opt ${curJoin === "round" ? "is-active" : ""}" data-jn="round">Redondo</button>
+          <button type="button" class="rsp-opt ${curJoin === "bevel" ? "is-active" : ""}" data-jn="bevel">Chanfro</button>
+          <button type="button" class="rsp-opt ${curJoin === "miter" ? "is-active" : ""}" data-jn="miter">Mitra</button>
+        `;
+      } else if (mode === "align") {
+        const curAl = sel?._cycleAlignState || "center-front";
+        optionsHtml = `
+          <div class="rsp-unit">ORDEM</div>
+          <button type="button" class="rsp-opt ${curAl === "center-front" ? "is-active" : ""}" data-al="center-front">Centro</button>
+          <button type="button" class="rsp-opt ${curAl === "inside" ? "is-active" : ""}" data-al="inside">Interno</button>
+          <button type="button" class="rsp-opt ${curAl === "outside" ? "is-active" : ""}" data-al="outside">Externo</button>
+          <button type="button" class="rsp-opt ${curAl === "center-behind" ? "is-active" : ""}" data-al="center-behind">Atrás</button>
+        `;
+      }
+
+      pop.innerHTML = `${optionsHtml}<button type="button" class="rsp-close" id="rsp-close">✕</button>`;
+
+      pop.querySelectorAll("[data-dup]").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const target = ctx.getSelectedPath();
+          if (!target || !Array.isArray(target.points) || target.points.length < 3) return;
+          const val = parseFloat(btn.dataset.dup);
+          const copy = cloneAsOffsetShape(target, val);
           if (!copy) return;
-
           ctx.snapshot();
           if (val > 0) {
             const idx = Math.max(0, ctx.ws.selectedIndex);
@@ -390,175 +363,206 @@
             ctx.ws.paths.push(copy);
             ctx.ws.selectedIndex = ctx.ws.paths.length - 1;
           }
-          showCycleBadge(val > 0 ? "Contorno Externo (+14px)" : "Moldura Interna (-12px)");
+          showCycleBadge(`Cópia (${val > 0 ? "+" + val : val}px)`);
+          ctx.sync();
+        };
+      });
+
+      pop.querySelectorAll("[data-st]").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const target = ctx.getSelectedPath();
+          if (!target) return;
+          ctx.snapshot();
+          const st = btn.dataset.st;
+          if (st === "none") {
+            target.strokeWidth = 0;
+          } else {
+            if (!target.stroke || target.stroke === "transparent") target.stroke = ctx.state.activeStroke || "#3d2d2d";
+            if (!target.strokeWidth || target.strokeWidth <= 0) target.strokeWidth = 2.2;
+            target.dash = st === "dash" ? [6, 4] : st === "dot" ? [1.5, 4.5] : [];
+          }
+          syncContourSidePopover(ctx);
+          ctx.sync();
+        };
+      });
+
+      pop.querySelectorAll("[data-jn]").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const target = ctx.getSelectedPath();
+          if (!target) return;
+          ctx.snapshot();
+          const jn = btn.dataset.jn;
+          target.lineJoin = jn;
+          target.lineCap = jn === "miter" ? "square" : jn === "bevel" ? "butt" : "round";
+          target.miterLimit = 1.5;
+          syncContourSidePopover(ctx);
+          ctx.sync();
+        };
+      });
+
+      pop.querySelectorAll("[data-al]").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const target = ctx.getSelectedPath();
+          if (!target) return;
+          ctx.snapshot();
+          applyAlignState(target, btn.dataset.al);
+          syncContourSidePopover(ctx);
+          ctx.sync();
+        };
+      });
+    }
+
+    pop.querySelector("#rsp-close").onclick = (e) => {
+      e.stopPropagation();
+      ctx.state._sidePopoverMode = null;
+      syncContourSidePopover(ctx);
+    };
+  }
+
+  const contourToolFamily = {
+    id: "contourGroup",
+    shortcut: "o",
+    submodes: ["normal", "typography", "layout"],
+    order: 4,
+    label: "Contornar & Traçado",
+    description: "Todas as ferramentas abrem controles verticais rápidos ao lado da barra direita.",
+    preview: "",
+
+    variants: [
+      {
+        id: "contourInteractive",
+        label: "Contorno Paralelo (O)",
+        description: "Arraste na tela ou ajuste na régua vertical de Offset (PX).",
+        preview: "",
+        icon: CONTOUR_MAIN_ICON,
+        onAction(ctx) {
+          ctx.state._sidePopoverMode = ctx.state._sidePopoverMode === "offset" ? null : "offset";
+          syncContourSidePopover(ctx);
+          ctx.sync();
+        },
+      },
+      {
+        id: "contourDuplicate",
+        label: "Gerar Contorno (+14 / +28 / -12px)",
+        description: "Abre opções de cópia externa ou moldura interna ao lado.",
+        preview: "",
+        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="3" y="3" width="18" height="18" rx="4" stroke-dasharray="3 2"/></svg>`,
+        onAction(ctx) {
+          ctx.state._sidePopoverMode = ctx.state._sidePopoverMode === "duplicate" ? null : "duplicate";
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
       {
         id: "strokeStyleCycle",
-        label: "Estilo · Sólido / Tracejado / Sem",
-        description: "Toque repetidamente para alternar entre Sólido, Tracejado, Pontilhado e Sem Contorno.",
+        label: "Estilo · Sólido / Tracejado / Ponto / Sem",
+        description: "Cicla o estilo do traço e abre os seletores ao lado.",
         preview: "",
         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3.5 3.5"><line x1="5" y1="19" x2="19" y2="5"/></svg>`,
         onAction(ctx) {
           const current = ctx.getSelectedPath();
-          if (!current) return;
-          ctx.snapshot();
-          if ((current.strokeWidth ?? 2) === 0 || current.stroke === "transparent") {
-            current.stroke = ctx.state.activeStroke || "#3d2d2d";
-            current.strokeWidth = 2.2;
-            current.dash = [];
-            showCycleBadge("Estilo: Linha Sólida");
-          } else if (!current.dash || current.dash.length === 0) {
-            current.dash = [6, 4];
-            showCycleBadge("Estilo: Tracejado [6, 4]");
-          } else if (current.dash[0] === 6) {
-            current.dash = [1.5, 4.5];
-            current.lineCap = "round";
-            showCycleBadge("Estilo: Pontilhado");
-          } else {
-            current.strokeWidth = 0;
-            current.dash = [];
-            showCycleBadge("Estilo: Sem Contorno (0 pt)");
+          if (current) {
+            ctx.snapshot();
+            if ((current.strokeWidth ?? 2) === 0 || current.stroke === "transparent") {
+              current.stroke = ctx.state.activeStroke || "#3d2d2d";
+              current.strokeWidth = 2.2;
+              current.dash = [];
+            } else if (!current.dash || current.dash.length === 0) {
+              current.dash = [6, 4];
+            } else if (current.dash[0] === 6) {
+              current.dash = [1.5, 4.5];
+            } else {
+              current.strokeWidth = 0;
+              current.dash = [];
+            }
           }
+          ctx.state._sidePopoverMode = "style";
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
       {
         id: "strokeWidthStep",
-        label: "Largura · Toque ou Deslize (pt)",
-        description: "Toque para alternar (0 a 8 pt) ou arraste para os lados para ajuste decimal fino.",
+        label: "Largura (pt) · Régua Vertical",
+        description: "Alterna a espessura e abre a barra vertical de ajuste fino ao lado.",
         preview: "",
         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7" stroke-width="1.2"/><line x1="4" y1="12" x2="20" y2="12" stroke-width="2.4"/><line x1="4" y1="17" x2="20" y2="17" stroke-width="4"/></svg>`,
         onAction(ctx) {
-          if (isClickSuppressed("strokeWidthStep")) return;
           const current = ctx.getSelectedPath();
-          if (!current) return;
-          ctx.snapshot();
-          const steps = [0, 1, 2.5, 5, 8];
-          const cur = current.strokeWidth ?? 2;
-          const next = steps.find((s) => s > cur + 0.1) ?? steps[0];
-          if (next > 0 && (!current.stroke || current.stroke === "transparent")) {
-            current.stroke = ctx.state.activeStroke || "#3d2d2d";
+          if (current) {
+            ctx.snapshot();
+            const steps = [1, 2.5, 5, 8, 0];
+            const cur = current.strokeWidth ?? 2;
+            const next = steps.find((s) => s > cur + 0.1) ?? steps[0];
+            if (next > 0 && (!current.stroke || current.stroke === "transparent")) {
+              current.stroke = ctx.state.activeStroke || "#3d2d2d";
+            }
+            current.strokeWidth = next;
           }
-          current.strokeWidth = next;
-          showCycleBadge(`Largura: ${next} pt`);
+          ctx.state._sidePopoverMode = "width";
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
       {
         id: "strokeJoinCycle",
         label: "Tampa & Junção (Mitra 1.5)",
-        description: "Toque repetidamente para alternar cantos entre Redondo, Chanfro e Mitra 1.5.",
+        description: "Cicla Redondo, Chanfro e Mitra 1.5 e abre as opções ao lado.",
         preview: "",
         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9a4 4 0 0 1 4-4h10"/><path d="M9 19v-8a2 2 0 0 1 2-2h8"/></svg>`,
         onAction(ctx) {
           const current = ctx.getSelectedPath();
-          if (!current) return;
-          ctx.snapshot();
-          const order = ["round", "bevel", "miter"];
-          const labels = { round: "Redonda", bevel: "Chanfrada", miter: "Mitra (1.5)" };
-          const next = order[(order.indexOf(current.lineJoin || "round") + 1) % order.length];
-          current.lineJoin = next;
-          current.lineCap = next === "miter" ? "square" : next === "bevel" ? "butt" : "round";
-          current.miterLimit = 1.5;
-          showCycleBadge(`Junção: ${labels[next]}`);
+          if (current) {
+            ctx.snapshot();
+            const order = ["round", "bevel", "miter"];
+            const next = order[(order.indexOf(current.lineJoin || "round") + 1) % order.length];
+            current.lineJoin = next;
+            current.lineCap = next === "miter" ? "square" : next === "bevel" ? "butt" : "round";
+            current.miterLimit = 1.5;
+          }
+          ctx.state._sidePopoverMode = "join";
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
       {
         id: "strokeAlignOrderCycle",
         label: "Alinhar & Ordem do Traço",
-        description: "Alterna Centro, Interno, Externo e Traço Atrás do preenchimento.",
+        description: "Alterna Centro, Interno, Externo e Traço Atrás e abre o seletor ao lado.",
         preview: "",
         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="11" height="11" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="9" y="9" width="11" height="11" rx="1.5"/></svg>`,
         onAction(ctx) {
           const current = ctx.getSelectedPath();
-          if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
-          ctx.snapshot();
-          const states = ["center-front", "inside", "outside", "center-behind"];
-          const labels = {
-            "center-front": "Alinhar: Centro (Frente)",
-            "inside": "Alinhar: Interno",
-            "outside": "Alinhar: Externo",
-            "center-behind": "Ordem: Traço Atrás",
-          };
-          const curState = current._cycleAlignState || "center-front";
-          const nextState = states[(states.indexOf(curState) + 1) % states.length];
-          current._cycleAlignState = nextState;
-
-          const sw = current.strokeWidth || 2.2;
-          if (!current._baseAlignPoints) {
-            current._baseAlignPoints = current.points.map((p) => ({ x: p.x, y: p.y }));
+          if (current) {
+            ctx.snapshot();
+            const states = ["center-front", "inside", "outside", "center-behind"];
+            const curState = current._cycleAlignState || "center-front";
+            const nextState = states[(states.indexOf(curState) + 1) % states.length];
+            applyAlignState(current, nextState);
           }
-
-          if (nextState === "inside") {
-            current.points = computeOffsetPolygon(current._baseAlignPoints, -sw * 0.5);
-            current.strokeBehind = false;
-          } else if (nextState === "outside") {
-            current.points = computeOffsetPolygon(current._baseAlignPoints, sw * 0.5);
-            current.strokeBehind = false;
-          } else if (nextState === "center-behind") {
-            current.points = current._baseAlignPoints.map((p) => ({ x: p.x, y: p.y }));
-            current.strokeBehind = true;
-          } else {
-            current.points = current._baseAlignPoints.map((p) => ({ x: p.x, y: p.y }));
-            current.strokeBehind = false;
-          }
-
-          showCycleBadge(labels[nextState]);
+          ctx.state._sidePopoverMode = "align";
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
       {
         id: "contourPositionCycle",
-        label: "Posição · Centro & Cantos",
-        description: "Toque repetidamente para ancorar o objeto no Centro ou nos 4 cantos da prancheta.",
+        label: "Posição X / Y · Régua Vertical",
+        description: "Abre a régua vertical de posição X e Y (com botão X⇄Y) ao lado.",
         preview: "",
         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`,
         onAction(ctx) {
-          const current = ctx.getSelectedPath();
-          if (!current) return;
-          const b = ctx.getPathBounds(current);
-          const objW = b.maxX - b.minX;
-          const objH = b.maxY - b.minY;
-
-          const ab = ctx.state.submode === "layout"
-            ? ctx.workspaces?.layout?.page
-            : ctx.workspaces?.normal?.artboard;
-
-          const ax = ab?.x || 0;
-          const ay = ab?.y || 0;
-          const hw = (ab?.width || 340) / 2 - 20;
-          const hh = (ab?.height || 340) / 2 - 20;
-
-          const anchors = [
-            { name: "Centro (0, 0)", x: ax, y: ay },
-            { name: "Topo Esquerdo", x: ax - hw + objW / 2, y: ay - hh + objH / 2 },
-            { name: "Topo Direito", x: ax + hw - objW / 2, y: ay - hh + objH / 2 },
-            { name: "Base Direita", x: ax + hw - objW / 2, y: ay + hh - objH / 2 },
-            { name: "Base Esquerda", x: ax - hw + objW / 2, y: ay + hh - objH / 2 },
-          ];
-
-          const step = (ctx.state._posCycleStep || 0) % anchors.length;
-          ctx.state._posCycleStep = step + 1;
-          const target = anchors[step];
-
-          ctx.snapshot();
-          translatePath(current, target.x - b.cx, target.y - b.cy);
-          showCycleBadge(`Posição: ${target.name}`);
-          ctx.sync();
-        },
-      },
-      {
-        id: "contourMoreSheet",
-        label: "Mais Ajustes (•••)",
-        description: "Abre o painel numérico para digitar Largura, Offset, Mitra e Posição X/Y exatos.",
-        preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>`,
-        onAction(ctx) {
-          ctx.state._contourSheetOpen = !ctx.state._contourSheetOpen;
-          syncContourSheet(ctx);
+          if (ctx.state._sidePopoverMode === "posX") {
+            ctx.state._sidePopoverMode = "posY";
+          } else if (ctx.state._sidePopoverMode === "posY") {
+            ctx.state._sidePopoverMode = null;
+          } else {
+            ctx.state._sidePopoverMode = "posX";
+          }
+          syncContourSidePopover(ctx);
           ctx.sync();
         },
       },
@@ -605,8 +609,7 @@
     },
 
     renderOverlay(ctx, toolCtx) {
-      bindButtonScrubbing(toolCtx);
-      syncContourSheet(toolCtx);
+      syncContourSidePopover(toolCtx);
 
       const current = toolCtx.getSelectedPath();
       if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
