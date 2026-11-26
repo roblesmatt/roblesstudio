@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Robles Studio</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#d4cec0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Robles" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="studio-app" class="studio-shell">
+      <main id="viewport" class="viewport" aria-label="Área de trabalho">
+        <canvas id="scene-canvas" class="scene-canvas"></canvas>
+
+        <!-- Topo esquerdo: áreas (Vetor, Pixel, Vídeo, 3D), renderizado por 2-ui-personas.js -->
+        <nav class="hud-pill hud-top-left" aria-label="Áreas de trabalho"></nav>
+
+        <!-- Topo centro: ações globais, renderizado por 3-ui-toolbars.js -->
+        <nav class="hud-pill hud-top-center" aria-label="Ações globais de edição"></nav>
+
+        <!-- Topo direito: visualização -->
+        <nav class="hud-pill hud-top-right" aria-label="Iluminação e visualização">
+          <button type="button" class="tool-btn" data-view="light" title="Iluminação">☀</button>
+          <button type="button" class="tool-btn" data-view="solid" title="Sólido">▣</button>
+          <button type="button" class="tool-btn" data-view="wireframe" title="Malha">❖</button>
+          <button type="button" class="tool-btn" data-view="material" title="Material">✺</button>
+          <button type="button" class="tool-btn" data-view="environment" title="Ambiente">✳</button>
+          <button type="button" class="tool-btn" data-view="settings" title="Configurações">⚙</button>
+        </nav>
+
+        <!-- Lateral esquerda: ferramentas primárias, renderizado por 3-ui-toolbars.js -->
+        <aside class="hud-pill hud-left" aria-label="Ferramentas de manipulação"></aside>
+      </main>
+    </div>
+
+    <!-- Core e interface -->
+    <script src="1-core-bridge.js"></script>
+    <script src="2-ui-personas.js"></script>
+    <script src="3-ui-toolbars.js"></script>
+    <script src="4-ui-drawers.js"></script>
+    <script src="5-viewport-engine.js"></script>
+
+    <!-- Módulo Vetorial (ferramentas primeiro, orquestrador depois) -->
+    <script src="js/vetor/01-move.js"></script>
+    <script src="js/vetor/02-artboard.js"></script>
+    <script src="js/vetor/03-corner.js"></script>
+    <script src="js/vetor/04-contour.js"></script>
+    <script src="js/vetor/vetor.js"></script>
+
+    <!-- Demais áreas -->
+    <script src="pixel.js"></script>
+    <script src="video.js"></script>
+    <script src="3d.js"></script>
+
+    <script>
+      // Evita o zoom de página do Safari no iPad; a pinça fica com o viewport
+      ["gesturestart", "gesturechange", "gestureend"].forEach((t) =>
+        document.addEventListener(t, (e) => e.preventDefault())
+      );
+      // Service worker (modo offline)
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+      }
+    </script>
+  </body>
+</html>
