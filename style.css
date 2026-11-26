@@ -303,7 +303,7 @@ body {
     max-width: 92px;
   }
 
-  /* Recolhida igual à da esquerda e deslizante na horizontal */
+  /* Recolhida igual Ã  da esquerda e deslizante na horizontal */
   .hud-top-center {
     left: 50%;
     transform: translateX(-50%);
@@ -365,7 +365,7 @@ body {
 
 
 /* ==========================================================================
-   PAINEL / DRAWER DE HISTÓRICO (LAYOUT SHAPR3D NA PALETA BEGE #CEC8B8)
+   PAINEL / DRAWER DE HISTÃ“RICO (LAYOUT SHAPR3D NA PALETA BEGE #CEC8B8)
    ========================================================================== */
 .history-popover-wrap {
   position: fixed;
@@ -379,7 +379,7 @@ body {
   gap: 8px;
 }
 
-/* Dois botões flutuantes no topo direito do painel ({} e Camadas) */
+/* Dois botÃµes flutuantes no topo direito do painel ({} e Camadas) */
 .history-top-toggles {
   display: inline-flex;
   align-items: center;
@@ -406,7 +406,7 @@ body {
   border-color: var(--accent-amber-bg);
 }
 
-/* Card principal do Histórico */
+/* Card principal do HistÃ³rico */
 .history-card {
   width: 100%;
   background: var(--hud-bg);
@@ -417,7 +417,7 @@ body {
   color: var(--text-icon);
 }
 
-/* Barra segmentada com as 4 abas (Vetor, Sketch/Pixel, 3D, Histórico) */
+/* Barra segmentada com as 4 abas (Vetor, Sketch/Pixel, 3D, HistÃ³rico) */
 .history-tabs-bar {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -448,7 +448,7 @@ body {
   color: var(--accent-amber);
 }
 
-/* Cabeçalho: "Histórico" à esquerda + ícone e contador à direita */
+/* CabeÃ§alho: "HistÃ³rico" Ã  esquerda + Ã­cone e contador Ã  direita */
 .history-card-header {
   display: flex;
   align-items: center;
@@ -474,7 +474,7 @@ body {
   color: rgba(0, 0, 0, 0.72);
 }
 
-/* Lista de passos paramétricos */
+/* Lista de passos paramÃ©tricos */
 .history-tree-list {
   display: flex;
   flex-direction: column;
@@ -532,7 +532,7 @@ body {
   position: relative;
 }
 
-/* Cartão oculto por padrão */
+/* CartÃ£o oculto por padrÃ£o */
 .tool-tip {
   position: absolute;
   left: calc(100% + 12px);
@@ -556,7 +556,7 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Aparece no hover centrado verticalmente com o botão */
+/* Aparece no hover centrado verticalmente com o botÃ£o */
 .tool-btn:hover .tool-tip {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
@@ -586,7 +586,7 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Área do GIF / Imagem (esconde totalmente se não tiver src) */
+/* Ãrea do GIF / Imagem (esconde totalmente se nÃ£o tiver src) */
 .tool-tip img {
   width: 100%;
   height: 112px;
@@ -601,7 +601,7 @@ body {
   display: none !important;
 }
 
-/* Espaçamento interno garantido */
+/* EspaÃ§amento interno garantido */
 .tool-tip-body {
   display: block;
   box-sizing: border-box;
@@ -637,7 +637,7 @@ body {
 
 
 
-/* Barra superior central (Desktop: todos visíveis e centralizados) */
+/* Barra superior central (Desktop: todos visÃ­veis e centralizados) */
 .hud-top-center {
   position: fixed;
   top: 14px;
@@ -655,12 +655,12 @@ body {
   flex-shrink: 0;
 }
 
-/* Mobile: vira carrossel horizontal centralizado mostrando 2,5 ícones */
+/* Mobile: vira carrossel horizontal centralizado mostrando 2,5 Ã­cones */
 @media (max-width: 768px) {
   .hud-top-center {
     top: 52px;
     display: flex;
-    width: 98px; /* 2 botões (~34px) + gaps + meio botão (17px) = 2,5 ícones visíveis */
+    width: 98px; /* 2 botÃµes (~34px) + gaps + meio botÃ£o (17px) = 2,5 Ã­cones visÃ­veis */
     max-width: 98px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -704,7 +704,7 @@ body {
   }
 }
 
-/* Base uniforme para TODAS as pílulas */
+/* Base uniforme para TODAS as pÃ­lulas */
 .hud-pill {
   position: fixed !important;
   display: inline-flex;
@@ -716,7 +716,7 @@ body {
   z-index: 30;
 }
 
-/* 1. TOPO ESQUERDO: Personas (Vetor / Pixel / Vídeo / 3D) */
+/* 1. TOPO ESQUERDO: Personas (Vetor / Pixel / VÃ­deo / 3D) */
 .hud-top-left {
   top: var(--hud-row-1) !important;
   left: var(--hud-margin) !important;
@@ -724,7 +724,7 @@ body {
   flex-direction: row !important;
 }
 
-/* 2. TOPO CENTRO: Ações Globais (Desfazer / Colar / Copiar / Duplicar / Ajuste / Refazer) */
+/* 2. TOPO CENTRO: AÃ§Ãµes Globais (Desfazer / Colar / Copiar / Duplicar / Ajuste / Refazer) */
 .hud-top-center {
   top: var(--hud-row-1) !important;
   left: 50% !important;
@@ -741,7 +741,7 @@ body {
   flex-direction: row !important;
 }
 
-/* 4. LATERAL ESQUERDA: Ferramentas Primárias */
+/* 4. LATERAL ESQUERDA: Ferramentas PrimÃ¡rias */
 .hud-left {
   top: var(--hud-row-2) !important;
   left: var(--hud-margin) !important;
@@ -750,7 +750,7 @@ body {
   padding: 4px !important;
 }
 
-/* 5. LATERAL DIREITA: Ferramentas Secundárias */
+/* 5. LATERAL DIREITA: Ferramentas SecundÃ¡rias */
 .hud-right {
   top: var(--hud-row-2) !important;
   right: var(--hud-margin) !important;
@@ -759,7 +759,7 @@ body {
   padding: 4px !important;
 }
 
-/* 6. INFERIOR ESQUERDO: Salvar / Configurações / Exportar */
+/* 6. INFERIOR ESQUERDO: Salvar / ConfiguraÃ§Ãµes / Exportar */
 .hud-bottom-left,
 #core-bottom-left-bar {
   bottom: var(--hud-bottom) !important;
@@ -769,7 +769,7 @@ body {
   flex-direction: row !important;
 }
 
-/* 7. INFERIOR DIREITO: Camadas / Medidas / Histórico */
+/* 7. INFERIOR DIREITO: Camadas / Medidas / HistÃ³rico */
 .hud-bottom-right,
 #core-bottom-right-bar {
   bottom: var(--hud-bottom) !important;
@@ -780,10 +780,10 @@ body {
 }
 
 /* =========================================================
-   RESPONSIVO MOBILE: CARROSSÉIS HORIZONTAIS NO TOPO
+   RESPONSIVO MOBILE: CARROSSÃ‰IS HORIZONTAIS NO TOPO
    ========================================================= */
 @media (max-width: 768px) {
-  /* Personas no topo esquerdo (2,5 ícones) */
+  /* Personas no topo esquerdo (2,5 Ã­cones) */
   .hud-top-left {
     display: flex !important;
     width: 96px !important;
@@ -798,7 +798,7 @@ body {
   }
   .hud-top-left::-webkit-scrollbar { display: none; }
 
-  /* Ações globais no topo centro (2,5 ícones perfeitamente alinhados na linha 1) */
+  /* AÃ§Ãµes globais no topo centro (2,5 Ã­cones perfeitamente alinhados na linha 1) */
   .hud-top-center {
     display: flex !important;
     width: 96px !important;
@@ -829,9 +829,9 @@ body {
 
 
 
-/* Caixa de configuração centralizada na parte inferior no estilo do Robles Studio */
-/* Caixa de configuração centralizada na parte inferior no estilo do Robles Studio */
-/* Cápsula vertical ao lado dos ícones secundários (estilo Procreate / Teenage Engineering) */
+/* Caixa de configuraÃ§Ã£o centralizada na parte inferior no estilo do Robles Studio */
+/* Caixa de configuraÃ§Ã£o centralizada na parte inferior no estilo do Robles Studio */
+/* CÃ¡psula vertical ao lado dos Ã­cones secundÃ¡rios (estilo Procreate / Teenage Engineering) */
 .robles-side-popover {
   position: fixed;
   right: 64px;
@@ -870,7 +870,7 @@ body {
   text-transform: uppercase;
 }
 
-/* Área da régua vertical com barrinhas segmentadas */
+/* Ãrea da rÃ©gua vertical com barrinhas segmentadas */
 .robles-side-popover .rsp-track {
   position: relative;
   width: 24px;
@@ -911,7 +911,7 @@ body {
   font-weight: 800;
   cursor: pointer;
 }
-/* Cápsula vertical unificada ao lado dos ícones secundários */
+/* CÃ¡psula vertical unificada ao lado dos Ã­cones secundÃ¡rios */
 .robles-side-popover {
   position: fixed;
   right: 64px;
@@ -957,7 +957,7 @@ body {
   text-transform: uppercase;
 }
 
-/* Régua vertical em barrinhas segmentadas */
+/* RÃ©gua vertical em barrinhas segmentadas */
 .robles-side-popover .rsp-track {
   position: relative;
   width: 24px;
@@ -987,7 +987,7 @@ body {
   );
 }
 
-/* Botões de opção empilhados dentro da cápsula vertical */
+/* BotÃµes de opÃ§Ã£o empilhados dentro da cÃ¡psula vertical */
 .robles-side-popover .rsp-opt,
 .robles-side-popover .rsp-chip {
   width: 100%;
@@ -1018,4 +1018,48 @@ body {
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
+}
+
+/* =========================================================
+   AJUSTES FINAIS (iPad, sem branco nativo, variÃ¡veis faltantes)
+   ========================================================= */
+:root { --shadow-hud: 0 6px 18px rgba(61, 45, 45, 0.16); }
+
+html, body {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+.studio-shell, .viewport { height: 100vh; height: 100dvh; }
+.scene-canvas { touch-action: none; }
+.hud-pill, .hud-left, .hud-right { touch-action: manipulation; overscroll-behavior: contain; }
+
+/* campos nativos sem fundo/seta branca */
+select, textarea,
+input[type="text"], input[type="number"], input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #cec8b8;
+  color: #3d2d2d;
+  border: 1px solid rgba(61, 45, 45, 0.3);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+}
+select {
+  padding-right: 22px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #3d2d2d 50%),
+    linear-gradient(135deg, #3d2d2d 50%, transparent 50%);
+  background-position: calc(100% - 13px) 55%, calc(100% - 8px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+input[type="range"] { accent-color: #161515; }
+
+/* iPad: hover "gruda" depois do toque e deixava o botÃ£o preto */
+@media (hover: none) {
+  .tool-btn:hover { background: transparent; color: var(--text-icon); }
+  .tool-btn.is-active:hover { background: var(--accent-amber-bg); color: var(--accent-amber); }
+  .tool-btn:hover .tool-tip { opacity: 0; }
 }

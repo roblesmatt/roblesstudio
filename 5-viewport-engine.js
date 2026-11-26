@@ -1,299 +1,287 @@
 (() => {
+  'use strict';
   const Core = window.RoblesCore;
   if (!Core) return;
+  const canvas = document.getElementById('scene-canvas');
+  const ctx = canvas && canvas.getContext('2d');
+  if (!ctx) return;
+  canvas.style.touchAction = 'none';
 
-  const canvas = document.getElementById("scene-canvas");
-  const ctx = canvas?.getContext("2d");
-  if (!canvas || !ctx) return;
+  const INK = '#3d2d2d';
+  const view = Core.state.camera2D;           // pan / zoom / rotation (rad) da vista 2D e dos módulos
+  if (typeof view.rotation !== 'number') view.rotation = 0;
 
-  let isDragging = false;
-  let isPanning = false;
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
+  let W = 0, H = 0, raf = 0;
+  let gesture = null, mode = null, spaceDown = false;
+  let last = { x: 0, y: 0 };
+  const pointers = new Map();
+  const warned = new Set();
 
-  function updateNodeBuffer(node) {
-    if (!node || !node.cacheCanvas) return;
-    const bCanvas = node.cacheCanvas;
-    const bCtx = bCanvas.getContext("2d");
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const area = () => Core.state.activeArea;
+  const mod = () => Core.modules[area()];
 
-    if (Core.modules[node.area]?.renderNode) {
-      Core.modules[node.area].renderNode(node, bCtx, Core.state.timeline.currentTime);
-      node.dirty = false;
-      return;
-    }
-
-    const w = bCanvas.width;
-    const h = bCanvas.height;
-
-    bCtx.clearRect(0, 0, w, h);
-    bCtx.save();
-    bCtx.translate(w / 2, h / 2);
-
-    const m = Core.state.measuresByArea[node.area] || { scale: 100, offsetX: 0, offsetY: 0, rotation: 0 };
-    bCtx.rotate((m.rotation * Math.PI) / 180);
-    const sc = (m.scale || 100) / 100;
-    bCtx.scale(sc, sc);
-
-    if (node.area === "vector") {
-      (node.payload?.paths || []).forEach((p) => {
-        if (!p.points?.length) return;
-        bCtx.beginPath();
-        p.points.forEach((pt, idx) => (idx === 0 ? bCtx.moveTo(pt.x, pt.y) : bCtx.lineTo(pt.x, pt.y)));
-        if (p.closed) bCtx.closePath();
-        if (p.fill) { bCtx.fillStyle = p.fill; bCtx.fill(); }
-        bCtx.strokeStyle = p.stroke || "#38bdf8";
-        bCtx.lineWidth = p.strokeWidth || 2.5;
-        bCtx.stroke();
-
-        if (Core.state.activeArea === "vector" && Core.state.selectedLayerId === node.id) {
-          p.points.forEach((pt) => {
-            bCtx.fillStyle = "#fff";
-            bCtx.strokeStyle = "#0ea5e9";
-            bCtx.fillRect(pt.x - 4, pt.y - 4, 8, 8);
-            bCtx.strokeRect(pt.x - 4, pt.y - 4, 8, 8);
-          });
-        }
-      });
-    } else if (node.area === "pixel") {
-      const cell = node.payload?.cellSize || 16;
-      (node.payload?.strokes || []).forEach((st) => {
-        bCtx.fillStyle = st.color || "#22c55e";
-        bCtx.fillRect(st.x, st.y, cell, cell);
-      });
-    } else if (node.area === "video") {
-      const t = Core.state.timeline.currentTime;
-      const grad = bCtx.createLinearGradient(-180, -100, 180, 100);
-      grad.addColorStop(0, "rgba(239, 68, 68, 0.35)");
-      grad.addColorStop(0.5 + 0.3 * Math.sin(t * 2), "rgba(249, 115, 22, 0.45)");
-      grad.addColorStop(1, "rgba(245, 158, 11, 0.35)");
-      bCtx.fillStyle = grad;
-      bCtx.fillRect(-180, -100, 360, 200);
-
-      bCtx.strokeStyle = "#fb923c";
-      bCtx.lineWidth = 3;
-      bCtx.beginPath();
-      for (let x = -160; x <= 160; x += 8) {
-        const y = Math.sin(x * 0.04 + t * 5) * 28;
-        x === -160 ? bCtx.moveTo(x, y) : bCtx.lineTo(x, y);
-      }
-      bCtx.stroke();
-      bCtx.fillStyle = "rgba(255,255,255,0.85)";
-      bCtx.font = "600 12px monospace";
-      bCtx.fillText(`REC · ${t.toFixed(2)}s`, -165, -76);
-    }
-
-    bCtx.restore();
-    node.dirty = false;
+  function size() {
+    W = canvas.clientWidth || window.innerWidth;
+    H = canvas.clientHeight || window.innerHeight;
   }
 
-  function projectPoint3D(x, y, z, cx, cy) {
-    const cam = Core.state.camera;
-    const x1 = x * Math.cos(cam.yaw) - z * Math.sin(cam.yaw);
-    const z1 = x * Math.sin(cam.yaw) + z * Math.cos(cam.yaw);
-    const y2 = y * Math.cos(cam.pitch) - z1 * Math.sin(cam.pitch);
-    const z2 = y * Math.sin(cam.pitch) + z1 * Math.cos(cam.pitch);
-    const scale = cam.zoom * (16 / Math.max(4, 16 + z2));
-    return { x: cx + cam.panX + x1 * scale, y: cy + cam.panY - y2 * scale, z: z2 };
+  /* ------------------------------------------------------------------
+     Coordenadas: tela -> espaço da câmera -> espaço local do módulo
+     (o módulo desenha em 0,0 = centro; aqui entram pan, zoom, rotação
+      da vista e escala/rotação da gaveta "Medidas")
+  ------------------------------------------------------------------ */
+  function measure() {
+    const m = Core.state.measuresByArea[area()] || {};
+    return { sc: Math.max(0.05, (m.scale || 100) / 100), rot: ((m.rotation || 0) * Math.PI) / 180 };
+  }
+  function toCam(sx, sy) {
+    const cos = Math.cos(-view.rotation), sin = Math.sin(-view.rotation);
+    const dx = sx - W / 2 - view.panX, dy = sy - H / 2 - view.panY;
+    return { x: (dx * cos - dy * sin) / view.zoom, y: (dx * sin + dy * cos) / view.zoom };
+  }
+  function toLocal(sx, sy) {
+    const q = toCam(sx, sy), M = measure();
+    const cos = Math.cos(-M.rot), sin = Math.sin(-M.rot);
+    return { x: (q.x * cos - q.y * sin) / M.sc, y: (q.x * sin + q.y * cos) / M.sc };
+  }
+  // muda zoom/rotação mantendo o ponto sob (sx, sy) parado na tela
+  function anchorZoom(sx, sy, zoom, rotation) {
+    const p = toCam(sx, sy);
+    view.zoom = clamp(zoom, 0.1, 16);
+    view.rotation = rotation;
+    const cos = Math.cos(rotation), sin = Math.sin(rotation);
+    view.panX = sx - W / 2 - view.zoom * (p.x * cos - p.y * sin);
+    view.panY = sy - H / 2 - view.zoom * (p.x * sin + p.y * cos);
+  }
+  function resetView() {
+    view.zoom = 1; view.panX = 0; view.panY = 0; view.rotation = 0;
+    schedule();
   }
 
-  function drawTexturedQuad3D(p0, p1, p2, p3, sourceCanvas) {
-    ctx.save();
+  function screenXY(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function info(e) {
+    return { pressure: e.pointerType === 'pen' ? (e.pressure || 0.5) : 0.5, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY };
+  }
+  function callModule(name, a, b, c) {
+    const m = mod();
+    if (!m || typeof m[name] !== 'function') return;
+    try { m[name](a, b, c); } catch (err) {
+      const key = area() + name;
+      if (!warned.has(key)) { warned.add(key); console.error('[Robles] erro em ' + area() + '.' + name, err); }
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Desenho
+  ------------------------------------------------------------------ */
+  function drawGrid() {
+    const ctr = toCam(W / 2, H / 2);
+    const R = Math.hypot(W, H) / view.zoom / 2;
+    let step = 32;
+    while ((R * 2) / step > 120) step *= 2;
+    const x0 = Math.floor((ctr.x - R) / step) * step, x1 = ctr.x + R;
+    const y0 = Math.floor((ctr.y - R) / step) * step, y1 = ctr.y + R;
+    ctx.lineWidth = 1 / view.zoom;
+    ctx.strokeStyle = 'rgba(61,45,45,0.10)';
     ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y);
-    ctx.closePath();
-    ctx.clip();
-    const sw = sourceCanvas.width;
-    const sh = sourceCanvas.height;
-    ctx.transform((p1.x - p0.x) / sw, (p1.y - p0.y) / sw, (p3.x - p0.x) / sh, (p3.y - p0.y) / sh, p0.x, p0.y);
-    ctx.drawImage(sourceCanvas, 0, 0);
+    for (let x = x0; x <= x1; x += step) { ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
+    for (let y = y0; y <= y1; y += step) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
+    ctx.stroke();
+  }
+
+  // Cada área desenha SOMENTE o seu módulo (render do próprio módulo, sem cache 512x512)
+  function drawActiveModule() {
+    const m = mod();
+    const M = measure();
+    ctx.save();
+    ctx.translate(W / 2 + view.panX, H / 2 + view.panY);
+    ctx.rotate(view.rotation);
+    ctx.scale(view.zoom, view.zoom);
+    ctx.rotate(M.rot);
+    ctx.scale(M.sc, M.sc);
+    if (area() === 'vector' && Core.state.settings.showGrid) drawGrid();
+    try { m.render(ctx, 0, 0); } catch (err) {
+      if (!warned.has('render' + area())) { warned.add('render' + area()); console.error('[Robles] erro em ' + area() + '.render', err); }
+    }
     ctx.restore();
   }
 
-  function draw3D(w, h) {
-    const cx = w / 2;
-    const cy = h / 2;
-
-    if (Core.state.settings.showGrid) {
-      ctx.lineWidth = 1;
-      for (let i = -8; i <= 8; i++) {
-        const a1 = projectPoint3D(i, -1.1, -8, cx, cy), a2 = projectPoint3D(i, -1.1, 8, cx, cy);
-        ctx.strokeStyle = i === 0 ? "rgba(59,130,246,0.45)" : "rgba(255,255,255,0.06)";
-        ctx.beginPath(); ctx.moveTo(a1.x, a1.y); ctx.lineTo(a2.x, a2.y); ctx.stroke();
-
-        const b1 = projectPoint3D(-8, -1.1, i, cx, cy), b2 = projectPoint3D(8, -1.1, i, cx, cy);
-        ctx.strokeStyle = i === 0 ? "rgba(239,68,68,0.45)" : "rgba(255,255,255,0.06)";
-        ctx.beginPath(); ctx.moveTo(b1.x, b1.y); ctx.lineTo(b2.x, b2.y); ctx.stroke();
-      }
-    }
-
-    const items = (Core.findLayer("grp-3d")?.children || []).filter((n) => n.visible);
-    items.forEach((node, idx) => {
-      const dims = node.payload?.dimensions || { w: 3, h: 2, d: 3 };
-      const ox = idx === 0 ? 0 : idx === 1 ? -3.4 : 3.5;
-      const hw = dims.w / 2, hh = dims.h / 2, hd = dims.d / 2;
-      const v = [
-        projectPoint3D(ox - hw, -hh, -hd, cx, cy), projectPoint3D(ox + hw, -hh, -hd, cx, cy),
-        projectPoint3D(ox + hw, hh, -hd, cx, cy),  projectPoint3D(ox - hw, hh, -hd, cx, cy),
-        projectPoint3D(ox - hw, -hh, hd, cx, cy),  projectPoint3D(ox + hw, -hh, hd, cx, cy),
-        projectPoint3D(ox + hw, hh, hd, cx, cy),   projectPoint3D(ox - hw, hh, hd, cx, cy),
-      ];
-
-      const faces = [
-        { indices: [4, 5, 6, 7], textured: true },
-        { indices: [3, 2, 6, 7], textured: true },
-        { indices: [1, 5, 6, 2], textured: false },
-        { indices: [0, 4, 7, 3], textured: false },
-        { indices: [0, 1, 2, 3], textured: false },
-      ].sort((a, b) => b.indices.reduce((s, i) => s + v[i].z, 0) - a.indices.reduce((s, i) => s + v[i].z, 0));
-
-      const texNode = Core.state.settings.liveSync2Dto3D && node.payload?.textureLayerId
-        ? Core.findLayer(node.payload.textureLayerId)
-        : null;
-      if (texNode && (texNode.dirty || texNode.area === "video")) updateNodeBuffer(texNode);
-
-      const isSel = Core.state.selectedLayerId === node.id;
-      faces.forEach((f) => {
-        const [i0, i1, i2, i3] = f.indices;
-        ctx.beginPath();
-        ctx.moveTo(v[i0].x, v[i0].y); ctx.lineTo(v[i1].x, v[i1].y); ctx.lineTo(v[i2].x, v[i2].y); ctx.lineTo(v[i3].x, v[i3].y);
-        ctx.closePath();
-        ctx.fillStyle = isSel ? "rgba(245, 158, 11, 0.22)" : "rgba(255,255,255,0.06)";
-        ctx.fill();
-        if (f.textured && texNode && texNode.visible) drawTexturedQuad3D(v[i3], v[i2], v[i1], v[i0], texNode.cacheCanvas);
-        ctx.strokeStyle = isSel ? "rgba(245, 158, 11, 0.9)" : "rgba(255, 255, 255, 0.25)";
-        ctx.stroke();
-      });
+  // Fallback quando o módulo não tem render(): camadas em cache da própria área
+  function updateNodeBuffer(node) {
+    const m = Core.modules[node.area];
+    if (m && m.renderNode) { m.renderNode(node, node.cacheCanvas.getContext('2d'), Core.state.timeline.currentTime); node.dirty = false; }
+  }
+  function drawCachedLayers() {
+    const M = measure();
+    ctx.save();
+    ctx.translate(W / 2 + view.panX, H / 2 + view.panY);
+    ctx.rotate(view.rotation);
+    ctx.scale(view.zoom, view.zoom);
+    ctx.rotate(M.rot);
+    ctx.scale(M.sc, M.sc);
+    const items = ((Core.findLayer('grp-2d') || {}).children || []).filter((n) => n.visible && n.area === area()).slice().reverse();
+    items.forEach((n) => {
+      if (n.dirty || area() === 'video') updateNodeBuffer(n);
+      ctx.globalAlpha = (n.opacity == null ? 100 : n.opacity) / 100;
+      ctx.drawImage(n.cacheCanvas, -n.cacheCanvas.width / 2, -n.cacheCanvas.height / 2);
     });
+    ctx.restore();
   }
 
-  function draw2D(w, h) {
-    const cam2D = Core.state.camera2D;
-    const cx = w / 2 + cam2D.panX;
-    const cy = h / 2 + cam2D.panY;
-
-    const items = (Core.findLayer("grp-2d")?.children || []).filter((n) => n.visible).slice().reverse();
-    items.forEach((node) => {
-      if (node.dirty || node.area === "video") updateNodeBuffer(node);
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(cam2D.zoom, cam2D.zoom);
-      ctx.drawImage(node.cacheCanvas, -node.cacheCanvas.width / 2, -node.cacheCanvas.height / 2);
-      ctx.restore();
+  // Fallback 3D do core (cubos + textura 2D) quando 3d.js não está carregado
+  function project(x, y, z, cx, cy) {
+    const c = Core.state.camera;
+    const x1 = x * Math.cos(c.yaw) - z * Math.sin(c.yaw), z1 = x * Math.sin(c.yaw) + z * Math.cos(c.yaw);
+    const y2 = y * Math.cos(c.pitch) - z1 * Math.sin(c.pitch), z2 = y * Math.sin(c.pitch) + z1 * Math.cos(c.pitch);
+    const s = c.zoom * (16 / Math.max(4, 16 + z2));
+    return { x: cx + c.panX + x1 * s, y: cy + c.panY - y2 * s, z: z2 };
+  }
+  function drawFallback3D() {
+    const cx = W / 2 + view.panX, cy = H / 2 + view.panY;
+    ((Core.findLayer('grp-3d') || {}).children || []).filter((n) => n.visible).forEach((node, idx) => {
+      const d = (node.payload && node.payload.dimensions) || { w: 3, h: 2, d: 3 };
+      const ox = idx === 0 ? 0 : idx === 1 ? -3.4 : 3.5, hw = d.w / 2, hh = d.h / 2, hd = d.d / 2;
+      const v = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]
+        .map((s) => project(ox + s[0] * hw, s[1] * hh, s[2] * hd, cx, cy));
+      [[4,5,6,7],[3,2,6,7],[1,5,6,2],[0,4,7,3],[0,1,2,3]].forEach((f) => {
+        ctx.beginPath();
+        f.forEach((i, k) => (k ? ctx.lineTo(v[i].x, v[i].y) : ctx.moveTo(v[i].x, v[i].y)));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(61,45,45,0.06)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(61,45,45,0.55)'; ctx.stroke();
+      });
     });
   }
 
   function render() {
+    raf = 0;
     const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth || window.innerWidth;
-    const h = canvas.clientHeight || window.innerHeight;
-    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
+    size();
+    if (canvas.width !== Math.floor(W * dpr) || canvas.height !== Math.floor(H * dpr)) {
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0, 0, W, H);
 
-    Core.state.activeArea === "3d" ? draw3D(w, h) : draw2D(w, h);
+    const m = mod();
+    if (m && typeof m.render === 'function') drawActiveModule();
+    else if (area() === '3d') drawFallback3D();
+    else drawCachedLayers();
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-    ctx.font = "500 11px system-ui, sans-serif";
-    ctx.fillText(`ROBLES STUDIO · ${Core.getAreaMeta().label.toUpperCase()} (${Core.state.activePreset}) · StudioLink Ativo`, 16, h - 62);
+    ctx.fillStyle = 'rgba(61,45,45,0.55)';
+    ctx.font = '500 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('ROBLES STUDIO · ' + Core.getAreaMeta().label.toUpperCase() + ' · ' + Core.state.activePreset, 16, H - 62);
+  }
+  function schedule() { if (!raf) raf = requestAnimationFrame(render); }
+
+  /* ------------------------------------------------------------------
+     Gestos de 2 dedos (pan + pinça + rotação)
+  ------------------------------------------------------------------ */
+  const touchPts = () => [...pointers.values()].filter((p) => p.type === 'touch').slice(0, 2);
+  function metrics() {
+    const [a, b] = touchPts();
+    return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, d: Math.hypot(b.x - a.x, b.y - a.y) || 1, ang: Math.atan2(b.y - a.y, b.x - a.x) };
+  }
+  function updateGesture() {
+    const m = metrics(), g = gesture;
+    view.panX += m.cx - g.cx;
+    view.panY += m.cy - g.cy;
+    anchorZoom(m.cx, m.cy, view.zoom * (m.d / g.d), view.rotation + (m.ang - g.ang));
+    gesture = m;
+    schedule();
   }
 
-canvas.addEventListener("pointerdown", (e) => {
-    canvas.setPointerCapture(e.pointerId);
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
-    const activeModule = Core.modules[Core.state.activeArea];
-
-    activeModule?.onMouseDown?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+  /* ------------------------------------------------------------------
+     Pointer Events: 1 dedo / Pencil / mouse -> módulo. 2 dedos -> vista.
+  ------------------------------------------------------------------ */
+  function endStroke() {
+    if (mode === 'tool') callModule('onMouseUp');
+    mode = null;
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    const penDown = [...pointers.values()].some((p) => p.type === 'pen');
+    if (e.pointerType === 'touch' && penDown) return;           // rejeição de palma
+    size();
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    const s = screenXY(e);
+    pointers.set(e.pointerId, { x: s.x, y: s.y, type: e.pointerType });
+    if (touchPts().length >= 2) { endStroke(); gesture = metrics(); mode = 'gesture'; return; }
+    last = s;
+    if (e.button === 1 || spaceDown) { e.preventDefault(); mode = 'pan'; return; }
+    const p = toLocal(s.x, s.y);
+    mode = 'tool';
+    callModule('onMouseDown', p.x, p.y, info(e));
+    schedule();
   });
-
-  canvas.addEventListener("pointermove", (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    const pressure = e.pointerType === "pen" ? (e.pressure || 0.5) : 0.5;
-    const activeModule = Core.modules[Core.state.activeArea];
-
-    activeModule?.onMouseMove?.(x, y, { pressure, pointerType: e.pointerType, tiltX: e.tiltX, tiltY: e.tiltY });
+  canvas.addEventListener('pointermove', (e) => {
+    const rec = pointers.get(e.pointerId);
+    if (!rec) return;
+    const s = screenXY(e);
+    rec.x = s.x; rec.y = s.y;
+    if (gesture) { updateGesture(); return; }
+    const dx = s.x - last.x, dy = s.y - last.y;
+    last = s;
+    if (mode === 'pan') { view.panX += dx; view.panY += dy; schedule(); }
+    else if (mode === 'tool') {
+      const p = toLocal(s.x, s.y);
+      callModule('onMouseMove', p.x, p.y, info(e));
+      schedule();
+    }
   });
-
-  canvas.addEventListener("pointerup", (e) => {
-    canvas.releasePointerCapture(e.pointerId);
-    const activeModule = Core.modules[Core.state.activeArea];
-    activeModule?.onMouseUp?.();
-  });
-
-
-  function handleDraw(e) {
-    const rect = canvas.getBoundingClientRect();
-    const cam2D = Core.state.camera2D;
-    const x = (e.clientX - rect.left - rect.width / 2 - cam2D.panX) / cam2D.zoom;
-    const y = (e.clientY - rect.top - rect.height / 2 - cam2D.panY) / cam2D.zoom;
-
-    if (Core.modules[Core.state.activeArea]?.onPointerDraw) {
-      Core.modules[Core.state.activeArea].onPointerDraw(x, y);
+  function release(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    try { if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (gesture) {
+      if (touchPts().length < 2) gesture = null;
+      mode = null;
       return;
     }
-
-    if (Core.state.activeArea === "pixel") {
-      const px = Core.findLayer("l-px-canvas");
-      const gx = Math.floor(x / 16) * 16, gy = Math.floor(y / 16) * 16;
-      if (px && !px.payload.strokes.some((s) => s.x === gx && s.y === gy)) {
-        px.payload.strokes.push({ x: gx, y: gy, color: "#22c55e" });
-        Core.invalidateNode(px.id);
-      }
-    } else if (Core.state.activeArea === "vector") {
-      const vec = Core.findLayer("l-vec-path");
-      if (vec?.payload?.paths?.[0]) {
-        vec.payload.paths[0].points.push({ x: Math.round(x), y: Math.round(y) });
-        Core.invalidateNode(vec.id);
-      }
-    }
+    endStroke();
+    schedule();
   }
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  window.addEventListener("pointermove", (e) => {
-    const dx = e.clientX - lastX, dy = e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    if (isPanning) {
-      const target = Core.state.activeArea === "3d" ? Core.state.camera : Core.state.camera2D;
-      target.panX += dx; target.panY += dy;
-      render();
-    } else if (isDragging && Core.state.activeArea === "3d") {
-      Core.state.camera.yaw += dx * 0.008;
-      Core.state.camera.pitch = Math.max(-1.4, Math.min(1.4, Core.state.camera.pitch + dy * 0.008));
-      render();
-    } else if (isDrawing && Core.state.activeArea === "pixel") {
-      handleDraw(e);
-    }
-  });
-
-  window.addEventListener("pointerup", () => {
-    if (isDrawing) Core.recordHistory(Core.state.activeArea, `Traço em ${Core.getAreaMeta().label}`);
-    isDragging = isPanning = isDrawing = false;
-  });
-
-  canvas.addEventListener("wheel", (e) => {
+  canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    if (Core.state.activeArea === "3d") Core.state.camera.zoom = Math.max(12, Math.min(140, Core.state.camera.zoom - e.deltaY * 0.04));
-    else Core.state.camera2D.zoom = Math.max(0.25, Math.min(4, Core.state.camera2D.zoom - e.deltaY * 0.001));
-    render();
+    size();
+    const s = screenXY(e);
+    if (e.shiftKey || e.altKey) anchorZoom(s.x, s.y, view.zoom, view.rotation + (e.deltaY || e.deltaX) * 0.003);
+    else anchorZoom(s.x, s.y, view.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), view.rotation);
+    schedule();
   }, { passive: false });
+
+  const typing = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement || {}).tagName);
+  window.addEventListener('keydown', (e) => {
+    if (typing()) return;
+    if (e.code === 'Space') { spaceDown = true; e.preventDefault(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); resetView(); }
+  });
+  window.addEventListener('keyup', (e) => { if (e.code === 'Space') spaceDown = false; });
+  window.addEventListener('blur', () => { spaceDown = false; });
 
   function tick(now) {
     const tl = Core.state.timeline;
     tl.currentTime += (now - tl.lastTick) / 1000;
     tl.lastTick = now;
-    if (tl.playing && ["video", "3d"].includes(Core.state.activeArea)) render();
+    if (tl.playing && ['video', '3d'].includes(area())) schedule();
     requestAnimationFrame(tick);
   }
 
-  Core.on("render:request", render);
-  window.addEventListener("resize", render);
+  Core.view = { toLocal, anchorZoom, resetView };
+  Core.on('render:request', schedule);
+  Core.on('area:changed', () => { gesture = null; mode = null; schedule(); });
+  window.addEventListener('resize', schedule);
+  size();
   render();
   requestAnimationFrame(tick);
 })();
