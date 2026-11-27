@@ -145,10 +145,21 @@
         e.stopPropagation();
         const act = btn.dataset.footer;
         if (act === "save") {
-          try {
-            localStorage.setItem("robles_studio_autosave", JSON.stringify({ activeArea: Core.state.activeArea, measures: Core.state.measuresByArea }));
-          } catch (_) {}
-          Core.recordHistory(Core.state.activeArea, `Salvo · ${Core.getAreaMeta().label}`);
+          if (window.RoblesHome?.saveCurrentProject) {
+            window.RoblesHome.saveCurrentProject();
+          } else {
+            try {
+              localStorage.setItem(
+                "robles_studio_autosave",
+                JSON.stringify({
+                  activeArea: Core.state.activeArea,
+                  measures: Core.state.measuresByArea,
+                })
+              );
+            } catch (_) {}
+            Core.recordHistory(Core.state.activeArea, `Salvo · ${Core.getAreaMeta().label}`);
+          }
+          window.RoblesHome?.show?.();
         } else if (act === "settings") {
           toggleSettingsPopover();
         } else if (act === "export") {

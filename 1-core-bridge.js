@@ -104,6 +104,26 @@
     "3d": ["Paramétrico", "Escultura", "Hard Surface"],
   };
 
+  const DEFAULT_LAYER_BY_AREA = {
+    vector: "l-vec-path",
+    pixel: "l-px-canvas",
+    video: "l-video-track",
+    "3d": "l-param-base",
+  };
+
+  const DEFAULT_PARAMS_BY_AREA = {
+    vector: { strokeWidth: 3, scale: 100 },
+    pixel: { cellSize: 16, scale: 100 },
+    video: { fps: 30, duration: 10 },
+    "3d": { w: 4.0, h: 2.2, d: 3.0 },
+  };
+
+  function normalizeAreaId(areaOrTab) {
+    if (!areaOrTab) return state?.activeArea || "vector";
+    if (areaOrTab === "sketch") return "pixel";
+    return AREAS.some((a) => a.id === areaOrTab) ? areaOrTab : "vector";
+  }
+
   function createCacheCanvas(w = 512, h = 512) {
     const c = document.createElement("canvas");
     c.width = w;
@@ -124,30 +144,44 @@
     if (!node.payload || Object.keys(node.payload).length === 0) {
       if (node.area === "vector") {
         node.payload = {
-          paths: [{
-            closed: true,
-            fill: "rgba(56, 189, 248, 0.25)",
-            stroke: "#38bdf8",
-            strokeWidth: 3,
-            points: [
-              { x: -110, y: -70 }, { x: 110, y: -70 }, { x: 140, y: 0 },
-              { x: 110, y: 70 }, { x: -110, y: 70 }, { x: -140, y: 0 },
-            ],
-          }],
+          paths: [
+            {
+              closed: true,
+              fill: "rgba(56, 189, 248, 0.25)",
+              stroke: "#38bdf8",
+              strokeWidth: 3,
+              points: [
+                { x: -110, y: -70 },
+                { x: 110, y: -70 },
+                { x: 140, y: 0 },
+                { x: 110, y: 70 },
+                { x: -110, y: 70 },
+                { x: -140, y: 0 },
+              ],
+            },
+          ],
         };
       } else if (node.area === "pixel") {
         node.payload = {
           cellSize: 16,
           strokes: [
-            { x: -64, y: -32, color: "#22c55e" }, { x: -48, y: -32, color: "#22c55e" },
-            { x: -32, y: -16, color: "#eab308" }, { x: -16, y: 0, color: "#eab308" },
-            { x: 0, y: 16, color: "#22c55e" }, { x: 16, y: 16, color: "#22c55e" },
+            { x: -64, y: -32, color: "#22c55e" },
+            { x: -48, y: -32, color: "#22c55e" },
+            { x: -32, y: -16, color: "#eab308" },
+            { x: -16, y: 0, color: "#eab308" },
+            { x: 0, y: 16, color: "#22c55e" },
+            { x: 16, y: 16, color: "#22c55e" },
           ],
         };
       } else if (node.area === "video") {
         node.payload = { duration: 10, fps: 30, playing: true, videoEl: null };
       } else if (node.area === "3d") {
-        node.payload = { shape: "box", dimensions: { w: 4.0, h: 2.2, d: 3.0 }, color: "#f59e0b", textureLayerId: "l-vec-path" };
+        node.payload = {
+          shape: "box",
+          dimensions: { w: 4.0, h: 2.2, d: 3.0 },
+          color: "#f59e0b",
+          textureLayerId: "l-vec-path",
+        };
       }
     }
 
@@ -158,12 +192,12 @@
 
   const state = {
     activeArea: "vector",
-    activePreset: "Paramétrico",
+    activePreset: "Traço Limpo",
     activeLeftAction: "transform",
     activeSecondaryAction: "tf-move",
     activeBottomDrawer: null,
-    activeHistoryTab: "3d",
-    selectedLayerId: "l-param-base",
+    activeHistoryTab: "vector",
+    selectedLayerId: "l-vec-path",
     historyEntries: [],
     settings: { showGrid: true, snapEnabled: true, exportScale: 1, liveSync2Dto3D: true },
     timeline: { currentTime: 0, fps: 30, playing: true, lastTick: performance.now() },
@@ -178,33 +212,99 @@
     },
     layersTree: [
       {
-        id: "grp-3d", name: "3D · Modelo Principal", meta: "3 Layers", kind: "group", area: "3d",
-        expanded: true, visible: true, swatch: "linear-gradient(135deg,#f59e0b,#ef4444)",
+        id: "grp-3d",
+        name: "3D · Modelo Principal",
+        meta: "3 Layers",
+        kind: "group",
+        area: "3d",
+        expanded: true,
+        visible: true,
+        swatch: "linear-gradient(135deg,#f59e0b,#ef4444)",
         children: [
           {
-            id: "l-param-base", name: "Cubo Paramétrico", meta: "Textura: Vetor Vivo", kind: "item", area: "3d",
-            visible: true, swatch: "linear-gradient(135deg,#f59e0b,#d97706)",
-            payload: { shape: "box", dimensions: { w: 4.0, h: 2.2, d: 3.0 }, color: "#f59e0b", textureLayerId: "l-vec-path" },
+            id: "l-param-base",
+            name: "Cubo Paramétrico",
+            meta: "Textura: Vetor Vivo",
+            kind: "item",
+            area: "3d",
+            visible: true,
+            swatch: "linear-gradient(135deg,#f59e0b,#d97706)",
+            payload: {
+              shape: "box",
+              dimensions: { w: 4.0, h: 2.2, d: 3.0 },
+              color: "#f59e0b",
+              textureLayerId: "l-vec-path",
+            },
           },
           {
-            id: "l-sculpt-mesh", name: "Volume Escultura", meta: "Malha Orgânica", kind: "item", area: "3d",
-            visible: true, swatch: "linear-gradient(135deg,#fb923c,#f59e0b)",
-            payload: { shape: "prism", dimensions: { w: 2.2, h: 2.8, d: 2.2 }, color: "#fb923c", textureLayerId: "l-px-canvas" },
+            id: "l-sculpt-mesh",
+            name: "Volume Escultura",
+            meta: "Malha Orgânica",
+            kind: "item",
+            area: "3d",
+            visible: true,
+            swatch: "linear-gradient(135deg,#fb923c,#f59e0b)",
+            payload: {
+              shape: "prism",
+              dimensions: { w: 2.2, h: 2.8, d: 2.2 },
+              color: "#fb923c",
+              textureLayerId: "l-px-canvas",
+            },
           },
           {
-            id: "l-hard-part", name: "Peça Hard Surface", meta: "Chanfro & Encaixe", kind: "item", area: "3d",
-            visible: true, swatch: "linear-gradient(135deg,#60a5fa,#3b82f6)",
-            payload: { shape: "plate", dimensions: { w: 4.6, h: 0.45, d: 3.6 }, color: "#3b82f6", textureLayerId: null },
+            id: "l-hard-part",
+            name: "Peça Hard Surface",
+            meta: "Chanfro & Encaixe",
+            kind: "item",
+            area: "3d",
+            visible: true,
+            swatch: "linear-gradient(135deg,#60a5fa,#3b82f6)",
+            payload: {
+              shape: "plate",
+              dimensions: { w: 4.6, h: 0.45, d: 3.6 },
+              color: "#3b82f6",
+              textureLayerId: null,
+            },
           },
         ],
       },
       {
-        id: "grp-2d", name: "Vetor, Pixel & Vídeo", meta: "3 Layers", kind: "group", area: "vector",
-        expanded: true, visible: true, swatch: "linear-gradient(135deg,#ec4899,#6366f1)",
+        id: "grp-2d",
+        name: "Vetor, Pixel & Vídeo",
+        meta: "3 Layers",
+        kind: "group",
+        area: "vector",
+        expanded: true,
+        visible: true,
+        swatch: "linear-gradient(135deg,#ec4899,#6366f1)",
         children: [
-          { id: "l-vec-path", name: "Traçado Vetorial", meta: "Curvas Editáveis", kind: "item", area: "vector", visible: true, swatch: "linear-gradient(135deg,#38bdf8,#818cf8)" },
-          { id: "l-px-canvas", name: "Grade de Pixels", meta: "64 × 40 cel", kind: "item", area: "pixel", visible: true, swatch: "linear-gradient(135deg,#22c55e,#eab308)" },
-          { id: "l-video-track", name: "Faixa de Vídeo", meta: "1920 × 1080 · 30fps", kind: "item", area: "video", visible: true, swatch: "linear-gradient(135deg,#ef4444,#f97316)" },
+          {
+            id: "l-vec-path",
+            name: "Traçado Vetorial",
+            meta: "Curvas Editáveis",
+            kind: "item",
+            area: "vector",
+            visible: true,
+            swatch: "linear-gradient(135deg,#38bdf8,#818cf8)",
+          },
+          {
+            id: "l-px-canvas",
+            name: "Grade de Pixels",
+            meta: "64 × 40 cel",
+            kind: "item",
+            area: "pixel",
+            visible: true,
+            swatch: "linear-gradient(135deg,#22c55e,#eab308)",
+          },
+          {
+            id: "l-video-track",
+            name: "Faixa de Vídeo",
+            meta: "1920 × 1080 · 30fps",
+            kind: "item",
+            area: "video",
+            visible: true,
+            swatch: "linear-gradient(135deg,#ef4444,#f97316)",
+          },
         ],
       },
     ].map(hydrateSceneNode),
@@ -227,23 +327,34 @@
     },
 
     dispatchCommand(command) {
+      const area = state.activeArea;
       if (command === "snap") {
         state.settings.snapEnabled = !state.settings.snapEnabled;
         this.recordHistory(
-          state.activeArea,
-          state.settings.snapEnabled ? "Ajuste ativado" : "Ajuste desativado"
+          area,
+          state.settings.snapEnabled ? "Ajuste ativado" : "Ajuste desativado",
+          { params: { snap: state.settings.snapEnabled ? 1 : 0 } }
         );
         this.emit("ui:update");
         this.emit("render:request");
         return;
       }
 
-      const activeMod = modules[state.activeArea];
+      const prevCount = state.historyEntries.length;
+      const activeMod = modules[area];
+
       if (activeMod && typeof activeMod.onCommand === "function") {
         activeMod.onCommand(command);
-      } else {
-        this.recordHistory(state.activeArea, `Ação: ${command}`);
       }
+
+      // Garante registo paramétrico mesmo se a persona não chamou recordHistory internamente
+      if (state.historyEntries.length === prevCount) {
+        this.recordHistory(area, `Ação · ${command}`, {
+          layerId: DEFAULT_LAYER_BY_AREA[area] || state.selectedLayerId,
+          params: { ...(DEFAULT_PARAMS_BY_AREA[area] || { passo: 1 }) },
+        });
+      }
+
       this.emit("ui:update");
       this.emit("render:request");
     },
@@ -263,7 +374,18 @@
     },
 
     getAreaMeta(id = state.activeArea) {
-      return AREAS.find((a) => a.id === id) || AREAS[3];
+      return AREAS.find((a) => a.id === id) || AREAS[0];
+    },
+
+    getLayersForArea(areaId = state.activeArea) {
+      const target = normalizeAreaId(areaId);
+      const result = [];
+      this.walkLayers((node) => {
+        if (node.kind === "item" && node.area === target) {
+          result.push(node);
+        }
+      });
+      return result;
     },
 
     findLayer(id, list = state.layersTree) {
@@ -283,7 +405,10 @@
 
     deleteLayer(id, list = state.layersTree) {
       for (let i = list.length - 1; i >= 0; i--) {
-        if (list[i].id === id) { list.splice(i, 1); return true; }
+        if (list[i].id === id) {
+          list.splice(i, 1);
+          return true;
+        }
         if (list[i].children && this.deleteLayer(id, list[i].children)) return true;
         if (list[i].sublayers && this.deleteLayer(id, list[i].sublayers)) return true;
       }
@@ -306,34 +431,146 @@
     },
 
     invalidateAll() {
-      this.walkLayers((n) => { n.dirty = true; });
+      this.walkLayers((n) => {
+        n.dirty = true;
+      });
       this.emit("render:request");
     },
 
-    recordHistory(areaOrTab, label) {
-      const tab = areaOrTab === "pixel" ? "sketch" : areaOrTab;
-      const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      state.historyEntries.unshift({ id: `${Date.now()}`, tab, label, time });
+    recordHistory(areaOrTab, label, extra = {}) {
+      const area = normalizeAreaId(areaOrTab);
+      const tab = area === "pixel" ? "sketch" : area;
+      const time = new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      const resolvedLayerId =
+        extra.layerId ||
+        (this.findLayer(state.selectedLayerId)?.area === area
+          ? state.selectedLayerId
+          : DEFAULT_LAYER_BY_AREA[area]) ||
+        state.selectedLayerId;
+
+      const baseParams = DEFAULT_PARAMS_BY_AREA[area] || { escala: 100 };
+      const entry = {
+        id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        tab,
+        area,
+        label,
+        time,
+        layerId: resolvedLayerId,
+        visible: extra.visible !== undefined ? extra.visible : true,
+        isolated: Boolean(extra.isolated),
+        plane: extra.plane || "XY",
+        params:
+          extra.params && typeof extra.params === "object"
+            ? { ...baseParams, ...extra.params }
+            : { ...baseParams },
+      };
+
+      state.historyEntries.unshift(entry);
       if (state.historyEntries.length > 80) state.historyEntries.length = 80;
+      this.emit("history:update", entry);
       this.emit("ui:update");
+      return entry;
     },
 
-    setActiveArea(nextArea) {
-      if (!AREAS.some((a) => a.id === nextArea)) return;
-      state.activeArea = nextArea;
-      state.activeHistoryTab = nextArea === "pixel" ? "sketch" : nextArea;
-      state.activePreset = (PRESETS_BY_AREA[nextArea] || PRESETS_BY_AREA["3d"])[0];
+    applyHistoryEdit(entry) {
+      if (!entry) return;
+      const area = normalizeAreaId(entry.area || entry.tab);
 
-      if (nextArea === "3d") {
-        state.selectedLayerId = "l-param-base";
-      } else {
-        const map = { pixel: "l-px-canvas", video: "l-video-track", vector: "l-vec-path" };
-        state.selectedLayerId = map[nextArea] || "l-vec-path";
+      if (area && state.activeArea !== area) {
+        this.setActiveArea(area);
+      }
+
+      const targetLayerId = entry.layerId || DEFAULT_LAYER_BY_AREA[area] || state.selectedLayerId;
+      const layer = this.findLayer(targetLayerId);
+      const params = entry.params && typeof entry.params === "object" ? entry.params : {};
+
+      if (layer) {
+        state.selectedLayerId = layer.id;
+        layer.visible = entry.visible !== false;
+        layer.isolated = Boolean(entry.isolated);
+        if (entry.plane) layer.plane = entry.plane;
+
+        if (area === "vector" && Array.isArray(layer.payload?.paths)) {
+          layer.payload.paths.forEach((p) => {
+            if (typeof params.strokeWidth === "number") p.strokeWidth = params.strokeWidth;
+            if (typeof params.stroke === "string") p.stroke = params.stroke;
+            if (typeof params.fill === "string") p.fill = params.fill;
+          });
+        } else if (area === "pixel" && layer.payload) {
+          if (typeof params.cellSize === "number" && params.cellSize > 0) {
+            layer.payload.cellSize = params.cellSize;
+          }
+        } else if (area === "video" && layer.payload) {
+          if (typeof params.fps === "number" && params.fps > 0) {
+            layer.payload.fps = params.fps;
+            state.timeline.fps = params.fps;
+          }
+          if (typeof params.duration === "number" && params.duration > 0) {
+            layer.payload.duration = params.duration;
+          }
+        } else if (area === "3d" && layer.payload) {
+          if (layer.payload.dimensions) {
+            if (typeof params.w === "number") layer.payload.dimensions.w = params.w;
+            if (typeof params.h === "number") layer.payload.dimensions.h = params.h;
+            if (typeof params.d === "number") layer.payload.dimensions.d = params.d;
+          }
+          if (typeof params.color === "string") layer.payload.color = params.color;
+        }
+
+        layer.dirty = true;
+      }
+
+      if (typeof params.scale === "number" && state.measuresByArea[area]) {
+        state.measuresByArea[area].scale = params.scale;
+      }
+
+      // Isolamento sincronizado entre camadas da área
+      if (entry.isolated && layer) {
+        this.walkLayers((n) => {
+          if (n.kind === "item" && n.area === area) {
+            n.visible = n.id === layer.id;
+            n.dirty = true;
+          }
+        });
+      }
+
+      const mod = modules[area];
+      if (mod && typeof mod.onHistoryEdit === "function") {
+        mod.onHistoryEdit(entry, layer);
       }
 
       this.invalidateAll();
-      this.emit("area:changed", nextArea);
+      this.emit("history:applied", entry);
       this.emit("ui:update");
+      this.emit("render:request");
+    },
+
+    setActiveArea(nextArea) {
+      const normalized = normalizeAreaId(nextArea);
+      if (!AREAS.some((a) => a.id === normalized)) return;
+      state.activeArea = normalized;
+      state.activeHistoryTab = normalized === "pixel" ? "sketch" : normalized;
+      state.activePreset = (PRESETS_BY_AREA[normalized] || PRESETS_BY_AREA["3d"])[0];
+      state.selectedLayerId = DEFAULT_LAYER_BY_AREA[normalized] || "l-vec-path";
+
+      this.invalidateAll();
+      this.emit("area:changed", normalized);
+      this.emit("persona:change", normalized);
+      this.emit("ui:update");
+      this.emit("render:request");
+    },
+
+    setArea(nextArea) {
+      this.setActiveArea(nextArea);
+    },
+
+    setPersona(nextArea) {
+      this.setActiveArea(nextArea);
     },
 
     setPreset(preset) {
@@ -349,7 +586,9 @@
       if (!target || !source) return;
       target.payload.textureLayerId = source.id;
       target.meta = `Textura: ${source.name}`;
-      this.recordHistory("3d", `Textura 3D: ${source.name} → ${target.name}`);
+      this.recordHistory("3d", `Textura 3D: ${source.name} → ${target.name}`, {
+        layerId: target.id,
+      });
       this.emit("render:request");
     },
 
@@ -367,11 +606,18 @@
           area: "3d",
           visible: true,
           swatch: "linear-gradient(135deg,#38bdf8,#f59e0b)",
-          payload: { shape: "extruded", dimensions: { w: 3.2, h: 1.4, d: 2.4 }, textureLayerId: node.id },
+          payload: {
+            shape: "extruded",
+            dimensions: { w: 3.2, h: 1.4, d: 2.4 },
+            textureLayerId: node.id,
+          },
         });
         grp3d.children.unshift(new3D);
         grp3d.meta = `${grp3d.children.length} Layers`;
-        this.recordHistory("3d", `Extrusão 2D→3D: ${node.name}`);
+        this.recordHistory("3d", `Extrusão 2D→3D: ${node.name}`, {
+          layerId: new3D.id,
+          params: { w: 3.2, h: 1.4, d: 2.4 },
+        });
         this.setActiveArea("3d");
         state.selectedLayerId = new3D.id;
       } else if (node.area === "3d" && targetArea === "vector") {
@@ -387,7 +633,10 @@
         });
         grp2d.children.unshift(newVec);
         grp2d.meta = `${grp2d.children.length} Layers`;
-        this.recordHistory("vector", `Projeção 3D→Vetor: ${node.name}`);
+        this.recordHistory("vector", `Projeção 3D→Vetor: ${node.name}`, {
+          layerId: newVec.id,
+          params: { strokeWidth: 3, scale: 100 },
+        });
         this.setActiveArea("vector");
         state.selectedLayerId = newVec.id;
       } else if (node.area === "vector" && targetArea === "pixel") {
@@ -403,7 +652,10 @@
         node.sublayers = node.sublayers || [];
         node.sublayers.unshift(subPixel);
         node.dirty = true;
-        this.recordHistory("pixel", `Subcamada Pixel em ${node.name}`);
+        this.recordHistory("pixel", `Subcamada Pixel em ${node.name}`, {
+          layerId: subPixel.id,
+          params: { cellSize: 16, scale: 100 },
+        });
         this.emit("render:request");
       } else if (node.area === "pixel" && targetArea === "vector") {
         const grp2d = this.findLayer("grp-2d");
@@ -418,12 +670,21 @@
         });
         grp2d.children.unshift(vectorized);
         grp2d.meta = `${grp2d.children.length} Layers`;
-        this.recordHistory("vector", `Vetorizado Pixel→Vetor: ${node.name}`);
+        this.recordHistory("vector", `Vetorizado Pixel→Vetor: ${node.name}`, {
+          layerId: vectorized.id,
+          params: { strokeWidth: 3, scale: 100 },
+        });
         this.setActiveArea("vector");
         state.selectedLayerId = vectorized.id;
       }
     },
   };
+
+  // Passo inicial para o histórico nunca abrir vazio
+  RoblesCore.recordHistory("vector", "Aberto · Novo projeto", {
+    layerId: "l-vec-path",
+    params: { strokeWidth: 3, scale: 100 },
+  });
 
   window.RoblesCore = RoblesCore;
 })();
