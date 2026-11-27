@@ -367,7 +367,7 @@
       (mode) => `
         <button
           type="button"
-          class="tool-btn ${state.submode === mode.id ? "is-active" : ""}"
+          class="tool-btn hud-persona-btn ${state.submode === mode.id ? "is-active" : ""}"
           data-vec-submode="${mode.id}"
         >
           ${mode.icon}

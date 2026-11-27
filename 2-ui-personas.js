@@ -4,11 +4,10 @@
 
   const nav = document.querySelector(".hud-top-left");
   if (!nav) return;
-
-  function renderPersonasPanel() {
+function renderPersonasPanel() {
     nav.innerHTML = Core.AREAS.map(
       (a) => `
-      <button type="button" class="tool-btn ${Core.state.activeArea === a.id ? "is-active" : ""}" data-area="${a.id}" title="${a.title}">
+      <button type="button" class="tool-btn hud-persona-btn ${Core.state.activeArea === a.id ? "is-active" : ""}" data-area="${a.id}" title="${a.title}">
         ${a.icon}
       </button>`
     ).join("");

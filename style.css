@@ -1063,3 +1063,74 @@ input[type="range"] { accent-color: #161515; }
   .tool-btn.is-active:hover { background: var(--accent-amber-bg); color: var(--accent-amber); }
   .tool-btn:hover .tool-tip { opacity: 0; }
 }
+
+
+
+
+/* =========================================================
+   ESTILO EXCLUSIVO: PERSONAS (TOP-LEFT) E SUBMENUS (TOP-RIGHT)
+   ========================================================= */
+.hud-top-left .tool-btn.hud-persona-btn,
+.hud-top-right .tool-btn.hud-persona-btn {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inativo: preto e branco com 50% de opacidade */
+.hud-top-left .tool-btn.hud-persona-btn:not(.is-active),
+.hud-top-right .tool-btn.hud-persona-btn:not(.is-active) {
+  background: transparent !important;
+  border-color: transparent !important;
+  outline: none !important;
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
+.hud-top-left .tool-btn.hud-persona-btn:not(.is-active) svg,
+.hud-top-left .tool-btn.hud-persona-btn:not(.is-active) img,
+.hud-top-right .tool-btn.hud-persona-btn:not(.is-active) svg,
+.hud-top-right .tool-btn.hud-persona-btn:not(.is-active) img {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
+/* Selecionado: sem borda e totalmente visível */
+.hud-top-left .tool-btn.hud-persona-btn.is-active,
+.hud-top-right .tool-btn.hud-persona-btn.is-active {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+  filter: none;
+}
+
+.hud-top-left .tool-btn.hud-persona-btn.is-active svg,
+.hud-top-left .tool-btn.hud-persona-btn.is-active img,
+.hud-top-right .tool-btn.hud-persona-btn.is-active svg,
+.hud-top-right .tool-btn.hud-persona-btn.is-active img {
+  filter: none;
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .hud-top-left .tool-btn.hud-persona-btn:not(.is-active):hover,
+  .hud-top-right .tool-btn.hud-persona-btn:not(.is-active):hover {
+    background: transparent !important;
+    outline: none !important;
+    opacity: 0.5;
+    filter: grayscale(100%);
+  }
+
+  .hud-top-left .tool-btn.hud-persona-btn.is-active:hover,
+  .hud-top-right .tool-btn.hud-persona-btn.is-active:hover {
+    border: none !important;
+    outline: none !important;
+    opacity: 1;
+    filter: none;
+  }
+}
