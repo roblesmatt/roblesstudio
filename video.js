@@ -1091,7 +1091,6 @@ function animate(t, state) {
       border-radius: 12px;
       padding: 10px;
       z-index: 35;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.32);
       font-family: monospace;
       font-size: 11px;
     `;
@@ -1169,7 +1168,6 @@ function animate(t, state) {
       -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid rgba(61, 45, 45, 0.35);
       border-radius: 12px;
-      box-shadow: 0 10px 28px rgba(34, 24, 24, 0.16);
       display: flex;
       flex-direction: column;
       overflow: hidden;

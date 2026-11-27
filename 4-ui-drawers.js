@@ -68,7 +68,7 @@
         bottom:${mobile ? "56px" : "66px"}; right:${mobile ? "10px" : "14px"}; left:${mobile ? "10px" : "auto"};
         width:${mobile ? "auto" : "284px"}; max-height:460px; padding:12px; z-index:32;
         background:var(--hud-bg); color:var(--text-icon); border:1px solid rgba(0,0,0,0.16);
-        border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,0.14); font-size:12px; overflow-y:auto;
+        border-radius:14px; font-size:12px; overflow-y:auto;
       `;
     }
   }

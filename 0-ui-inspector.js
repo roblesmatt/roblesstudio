@@ -1,8 +1,110 @@
+// 0-ui-inspector.js — Inspetor Central (Histórico, Camadas e Estilo) + Estilo Padrão Global
+
 (() => {
   const Core = window.RoblesCore;
   if (!Core) return;
 
   window.RoblesInspectorModules = window.RoblesInspectorModules || {};
+
+  const STORAGE_KEY_DEFAULT_STYLE = "robles_studio_default_vector_style_v1";
+
+  const FALLBACK_DEFAULT_STYLE = {
+    fill: "#3d2d2d",
+    stroke: "#161515",
+    strokeWidth: 2,
+    cornerRadius: 0,
+    opacity: 1,
+  };
+
+  function loadInitialDefaultStyle() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_DEFAULT_STYLE);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          ...FALLBACK_DEFAULT_STYLE,
+          ...(parsed && typeof parsed === "object" ? parsed : {}),
+        };
+      }
+    } catch (_) {}
+    return {
+      ...FALLBACK_DEFAULT_STYLE,
+      ...(window.RoblesDefaultStyle && typeof window.RoblesDefaultStyle === "object"
+        ? window.RoblesDefaultStyle
+        : {}),
+    };
+  }
+
+  window.RoblesDefaultStyle = loadInitialDefaultStyle();
+
+  function getDefaultStyle() {
+    return {
+      ...FALLBACK_DEFAULT_STYLE,
+      ...(window.RoblesDefaultStyle && typeof window.RoblesDefaultStyle === "object"
+        ? window.RoblesDefaultStyle
+        : {}),
+    };
+  }
+
+  function setDefaultStyle(nextStyle = {}, { persist = true, emit = true } = {}) {
+    const merged = {
+      ...getDefaultStyle(),
+      ...(nextStyle && typeof nextStyle === "object" ? nextStyle : {}),
+    };
+    window.RoblesDefaultStyle = merged;
+
+    if (persist) {
+      try {
+        localStorage.setItem(STORAGE_KEY_DEFAULT_STYLE, JSON.stringify(merged));
+      } catch (_) {}
+    }
+
+    if (emit) {
+      Core.emit?.("default-style:change", { style: { ...merged } });
+      Core.emit?.("style:change", { style: { ...merged }, isDefault: true });
+    }
+
+    return { ...merged };
+  }
+
+  function resetDefaultStyle() {
+    return setDefaultStyle({ ...FALLBACK_DEFAULT_STYLE });
+  }
+
+  function applyStyleToTargets(targets, styleObj = getDefaultStyle()) {
+    const list = Array.isArray(targets) ? targets : Array.from(targets || []);
+    const style = { ...getDefaultStyle(), ...(styleObj || {}) };
+
+    list.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if ("fill" in item || typeof item.setFill === "function") {
+        if (typeof item.setFill === "function") item.setFill(style.fill);
+        else item.fill = style.fill;
+      }
+      if ("stroke" in item || typeof item.setStroke === "function") {
+        if (typeof item.setStroke === "function") item.setStroke(style.stroke);
+        else item.stroke = style.stroke;
+      }
+      if ("strokeWidth" in item) item.strokeWidth = style.strokeWidth;
+      if ("cornerRadius" in item) item.cornerRadius = style.cornerRadius;
+      if ("opacity" in item) item.opacity = style.opacity;
+    });
+
+    return list;
+  }
+
+  function applyDefaultStyleToAll(styleObj = getDefaultStyle()) {
+    const style = setDefaultStyle(styleObj);
+    const items =
+      Core.state?.objects ||
+      Core.state?.items ||
+      Core.state?.vectorObjects ||
+      Core.state?.layers ||
+      [];
+    applyStyleToTargets(items, style);
+    Core.emit?.("style:apply-all", { style: { ...style } });
+    return style;
+  }
 
   let drawerEl = null;
   let isOpen = false;
@@ -16,25 +118,25 @@
       id: "vector",
       label: "Vetor",
       iconKey: "pen",
-      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2.5L15.5 11l-3.2 6.5H7.7L4.5 11 10 2.5z"/></svg>`,
+      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5L15.5 11l-3.2 6.5H7.7L4.5 11 10 2.5z"/></svg>`,
     },
     {
       id: "pixel",
       label: "Pixel",
       iconKey: "brush",
-      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="5.5" height="5.5"/><rect x="11.5" y="3" width="5.5" height="5.5"/><rect x="3" y="11.5" width="5.5" height="5.5"/><rect x="11.5" y="11.5" width="5.5" height="5.5"/></svg>`,
+      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5.5" height="5.5"/><rect x="11.5" y="3" width="5.5" height="5.5"/><rect x="3" y="11.5" width="5.5" height="5.5"/><rect x="11.5" y="11.5" width="5.5" height="5.5"/></svg>`,
     },
     {
       id: "video",
       label: "Vídeo",
       iconKey: "timeline",
-      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4" width="15" height="12" rx="2"/><polygon points="8.5,7.2 13,10 8.5,12.8" fill="currentColor" stroke="none"/></svg>`,
+      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="15" height="12" rx="2"/><polygon points="8.5,7.2 13,10 8.5,12.8" fill="currentColor" stroke="none"/></svg>`,
     },
     {
       id: "3d",
       label: "3D",
       iconKey: "sub3dParametric",
-      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none"><polygon points="10 2 17.5 6.2 10 10.4 2.5 6.2" fill="#E6B84C" stroke="#2D2323" stroke-width="1.3"/><polygon points="2.5 6.2 10 10.4 10 18 2.5 13.8" fill="#5B9BD5" stroke="#2D2323" stroke-width="1.3"/><polygon points="17.5 6.2 10 10.4 10 18 17.5 13.8" fill="#63B097" stroke="#2D2323" stroke-width="1.3"/></svg>`,
+      fallbackSvg: `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 2.2 17.5 6.4 10 10.6 2.5 6.4"/><polyline points="2.5 10.8 10 15 17.5 10.8"/><polyline points="2.5 14.8 10 19 17.5 14.8"/></svg>`,
     },
   ];
 
@@ -138,6 +240,11 @@
         filterArea: activeAreaTab,
         currentArea: activeAreaTab,
         subMode: resolveCurrentSubMode(),
+        defaultStyle: getDefaultStyle(),
+        setDefaultStyle,
+        resetDefaultStyle,
+        applyStyleToTargets,
+        applyDefaultStyleToAll,
       };
 
       const header =
@@ -268,18 +375,23 @@
     }
   }
 
-  ["area:change", "persona:change", "submode:change", "subpersona:change", "style:change"].forEach(
-    (evtName) => {
-      Core.on?.(evtName, () => {
-        if (!isOpen || isRendering || Date.now() < ignoreCoreSyncUntil) return;
-        const current = resolveCurrentArea();
-        if (current && AREA_TABS.some((t) => t.id === current)) {
-          activeAreaTab = current;
-        }
-        renderDrawer();
-      });
-    }
-  );
+  [
+    "area:change",
+    "persona:change",
+    "submode:change",
+    "subpersona:change",
+    "style:change",
+    "default-style:change",
+  ].forEach((evtName) => {
+    Core.on?.(evtName, () => {
+      if (!isOpen || isRendering || Date.now() < ignoreCoreSyncUntil) return;
+      const current = resolveCurrentArea();
+      if (current && AREA_TABS.some((t) => t.id === current)) {
+        activeAreaTab = current;
+      }
+      renderDrawer();
+    });
+  });
 
   // Ordem nos botões inferiores direitos: 0 = Histórico, 1 = Camadas, 2 = Estilo
   document.addEventListener(
@@ -345,5 +457,10 @@
     openStyle: () => open("style"),
     close,
     toggle,
+    getDefaultStyle,
+    setDefaultStyle,
+    resetDefaultStyle,
+    applyStyleToTargets,
+    applyDefaultStyleToAll,
   };
 })();

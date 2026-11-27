@@ -36,7 +36,6 @@
         font: "700 11px/1 ui-monospace, monospace",
         pointerEvents: "none",
         transition: "opacity 0.2s ease",
-        boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
       });
       document.body.appendChild(badge);
     }
