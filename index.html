@@ -197,7 +197,8 @@
     <script src="icons.js"></script>
     <script>
       (() => {
-        if (!window.RoblesIcons || typeof window.RoblesIcons.get !== "function") return;
+        if (!window.RoblesIcons || typeof window.RoblesIcons.get !== "function")
+          return;
 
         const map = [
           ['[data-tool="prim-sphere"]', "sculptSphereBase"],
@@ -245,11 +246,12 @@
     <script src="3d.js"></script>
 
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then((reg) => console.log('SW registado:', reg.scope))
-            .catch((err) => console.error('Falha ao registar SW:', err));
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then((reg) => console.log("SW registado:", reg.scope))
+            .catch((err) => console.error("Falha ao registar SW:", err));
         });
       }
     </script>
