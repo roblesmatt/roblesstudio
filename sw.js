@@ -1,7 +1,8 @@
-// Aumente a versão a cada atualização dos arquivos (v1 -> v2 ...)
-const CACHE = 'robles-v2';
+// Aumente a versão a cada atualização dos arquivos (v1 -> v2 -> v3 ...)
+const CACHE = 'robles-v3';
 const FILES = [
   './', './index.html', './style.css', './manifest.webmanifest',
+  './icons.js',
   './1-core-bridge.js', './2-ui-personas.js', './3-ui-toolbars.js',
   './4-ui-drawers.js', './5-viewport-engine.js',
   './js/vetor/01-move.js', './js/vetor/02-artboard.js', './js/vetor/03-corner.js',

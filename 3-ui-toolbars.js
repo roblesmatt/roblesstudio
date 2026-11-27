@@ -8,16 +8,43 @@
   let bottomLeftBar = document.getElementById("core-bottom-left-bar");
   let settingsPopover = null;
 
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
   const SVG = (d) =>
     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 
   const GLOBAL_EDIT_ACTIONS = [
-    { id: "undo", label: "Desfazer (Ctrl+Z)", icon: SVG(`<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>`) },
-    { id: "paste", label: "Colar (Ctrl+V)", icon: SVG(`<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>`) },
-    { id: "copy", label: "Copiar (Ctrl+C)", icon: SVG(`<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`) },
-    { id: "duplicate", label: "Duplicar (Ctrl+D)", icon: SVG(`<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/><path d="M14 11v6M11 14h6"/>`) },
-    { id: "snap", label: "Ajuste Magnético (Snap)", icon: SVG(`<path d="M6 15V9a6 6 0 1 1 12 0v6"/><path d="M6 15h4v4H6z"/><path d="M14 15h4v4h-4z"/>`) },
-    { id: "redo", label: "Refazer (Ctrl+Y)", icon: SVG(`<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>`) },
+    {
+      id: "undo",
+      label: "Desfazer (Ctrl+Z)",
+      icon: getIcon("undo", undefined, SVG(`<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>`)),
+    },
+    {
+      id: "paste",
+      label: "Colar (Ctrl+V)",
+      icon: getIcon("paste", undefined, SVG(`<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>`)),
+    },
+    {
+      id: "copy",
+      label: "Copiar (Ctrl+C)",
+      icon: getIcon("copy", undefined, SVG(`<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`)),
+    },
+    {
+      id: "duplicate",
+      label: "Duplicar (Ctrl+D)",
+      icon: getIcon("duplicate", undefined, SVG(`<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/><path d="M14 11v6M11 14h6"/>`)),
+    },
+    {
+      id: "snap",
+      label: "Ajuste Magnético (Snap)",
+      icon: getIcon("snap", undefined, SVG(`<path d="M6 15V9a6 6 0 1 1 12 0v6"/><path d="M6 15h4v4H6z"/><path d="M14 15h4v4h-4z"/>`)),
+    },
+    {
+      id: "redo",
+      label: "Refazer (Ctrl+Y)",
+      icon: getIcon("redo", undefined, SVG(`<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>`)),
+    },
   ];
 
   const host = () => document.querySelector(".viewport, .studio-shell, body");
@@ -109,9 +136,9 @@
     bottomLeftBar.id = "core-bottom-left-bar";
     bottomLeftBar.className = "hud-pill hud-bottom-left";
     bottomLeftBar.innerHTML = `
-      <button type="button" class="tool-btn" data-footer="save" title="Salvar">${Core.ICONS.save}</button>
-      <button type="button" class="tool-btn" data-footer="settings" title="Configurações">${Core.ICONS.gear}</button>
-      <button type="button" class="tool-btn" data-footer="export" title="Exportar PNG">${Core.ICONS.exportIcon}</button>
+      <button type="button" class="tool-btn" data-footer="save" title="Salvar">${getIcon("save", undefined, Core.ICONS.save)}</button>
+      <button type="button" class="tool-btn" data-footer="settings" title="Configurações">${getIcon("gear", undefined, Core.ICONS.gear)}</button>
+      <button type="button" class="tool-btn" data-footer="export" title="Exportar PNG">${getIcon("exportIcon", undefined, Core.ICONS.exportIcon)}</button>
     `;
     bottomLeftBar.querySelectorAll("[data-footer]").forEach((btn) => {
       btn.addEventListener("click", (e) => {

@@ -6,14 +6,17 @@
   let drawerEl = null;
   let layerSearch = "";
 
-  // 4 abas com ícones iguais ao layout da referência
-    // 4 abas das Personas: Vetor, Pixel, Vídeo e 3D
-  const HISTORY_TABS = [
-    { id: "vector", label: "Vetor", empty: "Nenhuma ação em Vetor.", icon: Core.ICONS.vector },
-    { id: "pixel", label: "Pixel", empty: "Nenhuma ação em Pixel.", icon: Core.ICONS.pixel },
-    { id: "video", label: "Vídeo", empty: "Nenhuma ação em Vídeo.", icon: Core.ICONS.video },
-    { id: "3d", label: "3D", empty: "Nenhuma ação em 3D.", icon: Core.ICONS.cube3d },
-  ];
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
+  function getHistoryTabs() {
+    return [
+      { id: "vector", label: "Vetor", empty: "Nenhuma ação em Vetor.", icon: Core.ICONS.vector },
+      { id: "pixel", label: "Pixel", empty: "Nenhuma ação em Pixel.", icon: Core.ICONS.pixel },
+      { id: "video", label: "Vídeo", empty: "Nenhuma ação em Vídeo.", icon: Core.ICONS.video },
+      { id: "3d", label: "3D", empty: "Nenhuma ação em 3D.", icon: Core.ICONS.cube3d },
+    ];
+  }
 
   function ensureElements() {
     if (!barEl) {
@@ -52,7 +55,6 @@
     `;
 
     if (isHistory) {
-      // No modo Histórico usa o wrapper limpo com os dois botões flutuantes no topo + card bege
       drawerEl.className = "history-popover-wrap";
       drawerEl.style.cssText = `
         position:fixed; display:${Core.state.activeBottomDrawer ? "flex" : "none"};
@@ -60,7 +62,6 @@
         width:${mobile ? "calc(100vw - 20px)" : "284px"}; max-width:300px; z-index:32;
       `;
     } else {
-      // Camadas e Medidas mantêm o card bege padrão
       drawerEl.className = "hud-pill";
       drawerEl.style.cssText = `
         position:fixed; display:${Core.state.activeBottomDrawer ? "flex" : "none"}; flex-direction:column; gap:8px;
@@ -206,23 +207,27 @@
         render();
       });
     } else if (mode === "history") {
-      const tabObj = HISTORY_TABS.find((t) => t.id === Core.state.activeHistoryTab) || HISTORY_TABS[3];
+      const historyTabs = getHistoryTabs();
+      const tabObj = historyTabs.find((t) => t.id === Core.state.activeHistoryTab) || historyTabs[3];
       const list = Core.state.activeHistoryTab === "all"
         ? Core.state.historyEntries
         : Core.state.historyEntries.filter((e) => e.tab === Core.state.activeHistoryTab);
 
+      const counterIcon = getIcon(
+        "historyCounter",
+        undefined,
+        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`
+      );
+
       drawerEl.innerHTML = `
-        <!-- Botões superiores ({ } Parâmetros e Camadas) -->
         <div class="history-top-toggles">
           <button type="button" class="history-toggle-pill" id="btn-hist-measures" title="Medidas e Parâmetros">{ }</button>
           <button type="button" class="history-toggle-pill is-active" id="btn-hist-layers" title="Camadas">${Core.ICONS.layers}</button>
         </div>
 
-        <!-- Card Principal Bege (#CEC8B8) -->
         <div class="history-card">
-          <!-- 4 Abas Segmentadas -->
           <div class="history-tabs-bar">
-            ${HISTORY_TABS.map((t) => `
+            ${historyTabs.map((t) => `
               <button
                 type="button"
                 class="history-tab-btn ${Core.state.activeHistoryTab === t.id ? "is-active" : ""}"
@@ -232,25 +237,31 @@
             `).join("")}
           </div>
 
-          <!-- Cabeçalho com Título + Contador -->
           <div class="history-card-header">
             <span class="history-card-title">Histórico</span>
             <div class="history-card-counter" title="Total de passos">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              ${counterIcon}
               <span>${list.length}</span>
               ${list.length > 0 ? `<button type="button" id="btn-clr-h" title="Limpar histórico" style="background:none;border:none;color:rgba(0,0,0,0.45);cursor:pointer;margin-left:4px;font-size:11px;">✕</button>` : ""}
             </div>
           </div>
 
-          <!-- Lista Hierárquica de Operações -->
           <div class="history-tree-list">
             ${list.length === 0
               ? `<div style="opacity:0.5;text-align:center;padding:16px 8px;font-size:12px;">${tabObj.empty}</div>`
               : list.map((item) => {
                   const isDerived = item.label.includes("→") || item.label.toLowerCase().includes("extru") || item.label.toLowerCase().includes("preset");
                   const stepIcon = item.tab === "3d"
-                    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`
-                    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
+                    ? getIcon(
+                        "sub3dHardSurface",
+                        undefined,
+                        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`
+                      )
+                    : getIcon(
+                        "historyStep",
+                        undefined,
+                        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`
+                      );
                   return `
                     <div class="history-step-row">
                       <div class="history-step-left">

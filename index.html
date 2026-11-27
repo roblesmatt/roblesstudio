@@ -191,38 +191,67 @@
             ⑂
           </button>
         </aside>
-
-   
-          </div>
-        </div>
       </main>
     </div>
 
+    <script src="icons.js"></script>
+    <script>
+      (() => {
+        if (!window.RoblesIcons || typeof window.RoblesIcons.get !== "function") return;
+
+        const map = [
+          ['[data-tool="prim-sphere"]', "sculptSphereBase"],
+          ['[data-tool="prim-cylinder"]', "primCylinder"],
+          ['[data-tool="prim-box"]', "primCardBox"],
+          ['[data-tool="prim-hex"]', "sub3dHardSurface"],
+          ['[data-mode="orbit"]', "rtCameraTurntable"],
+          ['[data-mode="select"]', "selectPointer"],
+          ['[data-mode="face"]', "hsSelFaces"],
+          ['[data-mode="edge"]', "hsSelEdges"],
+          ['[data-mode="vertex"]', "hsSelVertices"],
+          ['[data-view="light"]', "sub3dRender"],
+          ['[data-view="solid"]', "primCube"],
+          ['[data-view="wireframe"]', "hsToggleWire"],
+          ['[data-view="material"]', "shApothecaryBeige"],
+          ['[data-view="environment"]', "hdriStudioWarm"],
+          ['[data-action="transform"]', "move", "vector"],
+          ['[data-action="align"]', "pivot", "vector"],
+          ['[data-action="hierarchy"]', "nodes", "vector"],
+        ];
+
+        map.forEach(([selector, key, group]) => {
+          const btn = document.querySelector(selector);
+          const html = window.RoblesIcons.get(key, group);
+          if (btn && html) btn.innerHTML = html;
+        });
+      })();
+    </script>
+
     <script src="1-core-bridge.js"></script>
-<script src="2-ui-personas.js"></script>
-<script src="3-ui-toolbars.js"></script>
-<script src="4-ui-drawers.js"></script>
-<script src="5-viewport-engine.js"></script>
+    <script src="2-ui-personas.js"></script>
+    <script src="3-ui-toolbars.js"></script>
+    <script src="4-ui-drawers.js"></script>
+    <script src="5-viewport-engine.js"></script>
 
-<!-- Módulo Vetorial (ferramentas primeiro, orquestrador depois) -->
-<script src="js/vetor/01-move.js"></script>
-<script src="js/vetor/02-artboard.js"></script>
-<script src="js/vetor/03-corner.js"></script>
-<script src="js/vetor/04-contour.js"></script>
-<script src="js/vetor/vetor.js"></script>
+    <!-- Módulo Vetorial (ferramentas primeiro, orquestrador depois) -->
+    <script src="js/vetor/01-move.js"></script>
+    <script src="js/vetor/02-artboard.js"></script>
+    <script src="js/vetor/03-corner.js"></script>
+    <script src="js/vetor/04-contour.js"></script>
+    <script src="js/vetor/vetor.js"></script>
 
-<script src="pixel.js"></script>
-<script src="video.js"></script>
-<script src="3d.js"></script>
+    <script src="pixel.js"></script>
+    <script src="video.js"></script>
+    <script src="3d.js"></script>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then((reg) => console.log('SW registado:', reg.scope))
-        .catch((err) => console.error('Falha ao registar SW:', err));
-    });
-  }
-</script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((reg) => console.log('SW registado:', reg.scope))
+            .catch((err) => console.error('Falha ao registar SW:', err));
+        });
+      }
+    </script>
   </body>
 </html>

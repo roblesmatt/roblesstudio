@@ -1,14 +1,21 @@
 (() => {
   window.RoblesVectorTools = window.RoblesVectorTools || [];
 
-  const CONTOUR_MAIN_ICON = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11.5" cy="12.5" r="4" fill="currentColor"/>
-      <path d="M11.5 3.5a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9" stroke-dasharray="2.5 2.5"/>
-      <path d="M16.5 4.5h4v4"/>
-      <path d="M20.5 4.5l-4.5 4.5"/>
-    </svg>
-  `;
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
+  const CONTOUR_MAIN_ICON = getIcon(
+    "contour",
+    "vector",
+    `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11.5" cy="12.5" r="4" fill="currentColor"/>
+        <path d="M11.5 3.5a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9" stroke-dasharray="2.5 2.5"/>
+        <path d="M16.5 4.5h4v4"/>
+        <path d="M20.5 4.5l-4.5 4.5"/>
+      </svg>
+    `
+  );
 
   function showCycleBadge(text) {
     let badge = document.getElementById("robles-cycle-toast");
@@ -449,7 +456,11 @@
         label: "Gerar Contorno (+14 / +28 / -12px)",
         description: "Abre opções de cópia externa ou moldura interna ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="3" y="3" width="18" height="18" rx="4" stroke-dasharray="3 2"/></svg>`,
+        icon: getIcon(
+          "contourDuplicate",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="3" y="3" width="18" height="18" rx="4" stroke-dasharray="3 2"/></svg>`
+        ),
         onAction(ctx) {
           ctx.state._sidePopoverMode = ctx.state._sidePopoverMode === "duplicate" ? null : "duplicate";
           syncContourSidePopover(ctx);
@@ -461,7 +472,11 @@
         label: "Estilo · Sólido / Tracejado / Ponto / Sem",
         description: "Cicla o estilo do traço e abre os seletores ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3.5 3.5"><line x1="5" y1="19" x2="19" y2="5"/></svg>`,
+        icon: getIcon(
+          "strokeStyleCycle",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3.5 3.5"><line x1="5" y1="19" x2="19" y2="5"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (current) {
@@ -489,7 +504,11 @@
         label: "Largura (pt) · Régua Vertical",
         description: "Alterna a espessura e abre a barra vertical de ajuste fino ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7" stroke-width="1.2"/><line x1="4" y1="12" x2="20" y2="12" stroke-width="2.4"/><line x1="4" y1="17" x2="20" y2="17" stroke-width="4"/></svg>`,
+        icon: getIcon(
+          "strokeWidthStep",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7" stroke-width="1.2"/><line x1="4" y1="12" x2="20" y2="12" stroke-width="2.4"/><line x1="4" y1="17" x2="20" y2="17" stroke-width="4"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (current) {
@@ -512,7 +531,11 @@
         label: "Tampa & Junção (Mitra 1.5)",
         description: "Cicla Redondo, Chanfro e Mitra 1.5 e abre as opções ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9a4 4 0 0 1 4-4h10"/><path d="M9 19v-8a2 2 0 0 1 2-2h8"/></svg>`,
+        icon: getIcon(
+          "strokeJoinCycle",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9a4 4 0 0 1 4-4h10"/><path d="M9 19v-8a2 2 0 0 1 2-2h8"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (current) {
@@ -533,7 +556,11 @@
         label: "Alinhar & Ordem do Traço",
         description: "Alterna Centro, Interno, Externo e Traço Atrás e abre o seletor ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="11" height="11" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="9" y="9" width="11" height="11" rx="1.5"/></svg>`,
+        icon: getIcon(
+          "strokeAlignOrderCycle",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="11" height="11" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="9" y="9" width="11" height="11" rx="1.5"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (current) {
@@ -553,7 +580,11 @@
         label: "Posição X / Y · Régua Vertical",
         description: "Abre a régua vertical de posição X e Y (com botão X⇄Y) ao lado.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`,
+        icon: getIcon(
+          "contourPositionCycle",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`
+        ),
         onAction(ctx) {
           if (ctx.state._sidePopoverMode === "posX") {
             ctx.state._sidePopoverMode = "posY";

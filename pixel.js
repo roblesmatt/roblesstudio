@@ -1,22 +1,36 @@
 (() => {
   const CORE = () => window.RoblesCore || window.RoblesStudio || null;
+  const iconOrFallback = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
 
   // 1. Sub-Personas no canto superior direito exclusivas do módulo Pixel (inicia em "manipulacao")
   const PIXEL_SUBMODES = [
     {
       id: "manipulacao",
       label: "Manipulação · Composição & Retoque (PhotoCraft)",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+      icon: iconOrFallback(
+        "image",
+        "pixel",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+      ),
     },
     {
       id: "fotografia",
       label: "Fotografia · Revelação & Color Grading (LightCraft)",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="14.31" y1="8" x2="20.05" y2="17.94"/><line x1="9.69" y1="8" x2="21.17" y2="8"/><line x1="7.38" y1="12" x2="13.12" y2="2.06"/><line x1="9.69" y1="16" x2="3.95" y2="6.06"/><line x1="14.31" y1="16" x2="2.83" y2="16"/><line x1="16.62" y1="12" x2="10.88" y2="21.94"/></svg>`,
+      icon: iconOrFallback(
+        "aperture",
+        "pixel",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="14.31" y1="8" x2="20.05" y2="17.94"/><line x1="9.69" y1="8" x2="21.17" y2="8"/><line x1="7.38" y1="12" x2="13.12" y2="2.06"/><line x1="9.69" y1="16" x2="3.95" y2="6.06"/><line x1="14.31" y1="16" x2="2.83" y2="16"/><line x1="16.62" y1="12" x2="10.88" y2="21.94"/></svg>`
+      ),
     },
     {
       id: "pintura",
       label: "Pintura · Esboço, Aquarela & Pincéis RGBA (Krita)",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/></svg>`,
+      icon: iconOrFallback(
+        "brush",
+        "pixel",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/></svg>`
+      ),
     },
   ];
 
@@ -33,17 +47,29 @@
           {
             id: "pcImportImage",
             label: "Importar Imagem (PNG, JPG, WebP)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+            icon: iconOrFallback(
+              "upload",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+            ),
           },
           {
             id: "pcNewCanvas",
             label: "Novo Quadro Limpo (Papel Algodão)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+            icon: iconOrFallback(
+              "newCanvas",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`
+            ),
           },
           {
             id: "pcExportPng",
             label: "Exportar Composição (.PNG)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+            icon: iconOrFallback(
+              "export",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
+            ),
           },
         ],
       },
@@ -54,17 +80,29 @@
           {
             id: "pcMarqueeRect",
             label: "Seleção Retangular (M)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" stroke-dasharray="3 2"/></svg>`,
+            icon: iconOrFallback(
+              "marquee",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" stroke-dasharray="3 2"/></svg>`
+            ),
           },
           {
             id: "pcCropToSel",
             label: "Cortar Imagem pela Seleção",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+            icon: iconOrFallback(
+              "crop",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`
+            ),
           },
           {
             id: "pcClearSel",
             label: "Limpar Seleção",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`,
+            icon: iconOrFallback(
+              "clearSelection",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`
+            ),
           },
         ],
       },
@@ -75,17 +113,29 @@
           {
             id: "pcMoveLayer",
             label: "Mover / Arrastar Camada (V)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>`,
+            icon: iconOrFallback(
+              "move",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>`
+            ),
           },
           {
             id: "pcFlipH",
             label: "Espelhar Horizontal",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><polygon points="8 7 3 12 8 17 8 7"/><polygon points="16 7 21 12 16 17 16 7"/></svg>`,
+            icon: iconOrFallback(
+              "flipH",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><polygon points="8 7 3 12 8 17 8 7"/><polygon points="16 7 21 12 16 17 16 7"/></svg>`
+            ),
           },
           {
             id: "pcRotate90",
             label: "Rotacionar 90° Horário",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+            icon: iconOrFallback(
+              "rotate90",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`
+            ),
           },
         ],
       },
@@ -96,17 +146,29 @@
           {
             id: "pcEraser",
             label: "Borracha de Pixel (E)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>`,
+            icon: iconOrFallback(
+              "eraser",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>`
+            ),
           },
           {
             id: "pcBlurBrush",
             label: "Pincel Desfoque / Suavizar",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+            icon: iconOrFallback(
+              "blur",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`
+            ),
           },
           {
             id: "pcLiquify",
             label: "Liquify / Empurrar Pixels",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12c3-5 6 5 9 0s6 5 9 0"/></svg>`,
+            icon: iconOrFallback(
+              "liquify",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12c3-5 6 5 9 0s6 5 9 0"/></svg>`
+            ),
           },
         ],
       },
@@ -117,12 +179,20 @@
           {
             id: "pcInvertColors",
             label: "Inverter Cores (Negativo)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>`,
+            icon: iconOrFallback(
+              "invert",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>`
+            ),
           },
           {
             id: "pcPixelate",
             label: "Pixelizar / Mosaico",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>`,
+            icon: iconOrFallback(
+              "pixelate",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>`
+            ),
           },
         ],
       },
@@ -139,17 +209,29 @@
           {
             id: "lcExpUp",
             label: "Aumentar Exposição (+0.25 EV)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>`,
+            icon: iconOrFallback(
+              "exposureUp",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>`
+            ),
           },
           {
             id: "lcExpDown",
             label: "Reduzir Exposição (-0.25 EV)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+            icon: iconOrFallback(
+              "exposureDown",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+            ),
           },
           {
             id: "lcResetAll",
             label: "Resetar Revelação (Original)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
+            icon: iconOrFallback(
+              "reset",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`
+            ),
           },
         ],
       },
@@ -160,12 +242,20 @@
           {
             id: "lcContrastUp",
             label: "Aumentar Contraste (+15%)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>`,
+            icon: iconOrFallback(
+              "contrastUp",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>`
+            ),
           },
           {
             id: "lcContrastDown",
             label: "Suavizar Contraste (-15%)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M4 18C8 14 16 10 20 6"/></svg>`,
+            icon: iconOrFallback(
+              "contrastDown",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M4 18C8 14 16 10 20 6"/></svg>`
+            ),
           },
         ],
       },
@@ -176,12 +266,20 @@
           {
             id: "lcWarmUp",
             label: "Aquecer Temperatura (+K Âmbar)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`,
+            icon: iconOrFallback(
+              "warm",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`
+            ),
           },
           {
             id: "lcCoolDown",
             label: "Esfriar Temperatura (-K Azul)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>`,
+            icon: iconOrFallback(
+              "cool",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>`
+            ),
           },
         ],
       },
@@ -192,12 +290,20 @@
           {
             id: "lcSatUp",
             label: "Aumentar Saturação (+15%)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><circle cx="8.5" cy="15" r="4"/><circle cx="15.5" cy="15" r="4"/></svg>`,
+            icon: iconOrFallback(
+              "satUp",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><circle cx="8.5" cy="15" r="4"/><circle cx="15.5" cy="15" r="4"/></svg>`
+            ),
           },
           {
             id: "lcSatDown",
             label: "Dessaturar / Filme Suave (-20%)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/></svg>`,
+            icon: iconOrFallback(
+              "satDown",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/></svg>`
+            ),
           },
         ],
       },
@@ -208,17 +314,29 @@
           {
             id: "lcPresetApothecary",
             label: "Preset Apothecary Warm (#CEC8B8)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#CEC8B8"/></svg>`,
+            icon: iconOrFallback(
+              "presetApothecary",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#CEC8B8"/></svg>`
+            ),
           },
           {
             id: "lcPresetBotanical",
             label: "Preset Sálvia Botânico",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#84987E"/></svg>`,
+            icon: iconOrFallback(
+              "presetBotanical",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#84987E"/></svg>`
+            ),
           },
           {
             id: "lcPresetMono",
             label: "Preset Filme P&B Editorial",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#3d2d2d"/></svg>`,
+            icon: iconOrFallback(
+              "presetMono",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3" fill="#3d2d2d"/></svg>`
+            ),
           },
         ],
       },
@@ -229,7 +347,11 @@
           {
             id: "lcVignetteToggle",
             label: "Alternar Vinheta de Lente",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="5"/></svg>`,
+            icon: iconOrFallback(
+              "vignette",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="5"/></svg>`
+            ),
           },
         ],
       },
@@ -246,17 +368,29 @@
           {
             id: "krPencilHB",
             label: "Lápis Grafite HB (Traço Seco Texturizado)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`,
+            icon: iconOrFallback(
+              "pencil",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`
+            ),
           },
           {
             id: "krCharcoal",
             label: "Carvão Artístico (Grão Orgânico)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20L19 5l2 2L6 22H4v-2z"/></svg>`,
+            icon: iconOrFallback(
+              "charcoal",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20L19 5l2 2L6 22H4v-2z"/></svg>`
+            ),
           },
           {
             id: "krInkPen",
             label: "Caneta Nanquim G-Pen (Contorno Preciso)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>`,
+            icon: iconOrFallback(
+              "inkPen",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>`
+            ),
           },
         ],
       },
@@ -267,17 +401,29 @@
           {
             id: "krWatercolorWash",
             label: "Aquarela Lavagem Úmida (Watercolor Wash)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+            icon: iconOrFallback(
+              "watercolorWash",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`
+            ),
           },
           {
             id: "krWatercolorEdge",
             label: "Aquarela Borda Pigmentada (Bloom)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"/></svg>`,
+            icon: iconOrFallback(
+              "watercolorEdge",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"/></svg>`
+            ),
           },
           {
             id: "krWaterBlender",
             label: "Pincel Água Limpa (Diluir & Mesclar)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/></svg>`,
+            icon: iconOrFallback(
+              "waterBlender",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/></svg>`
+            ),
           },
         ],
       },
@@ -288,17 +434,29 @@
           {
             id: "krRgbaImpasto",
             label: "Pincel RGBA Empasto Óleo/Acrílico",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/></svg>`,
+            icon: iconOrFallback(
+              "impasto",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/></svg>`
+            ),
           },
           {
             id: "krRgbaBristle",
             label: "Pincel RGBA Cerdas Abertas (Dry Bristle)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`,
+            icon: iconOrFallback(
+              "bristle",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`
+            ),
           },
           {
             id: "krRgbaAirbrush",
             label: "Aerógrafo RGBA Suave (Soft Airbrush)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 3"/></svg>`,
+            icon: iconOrFallback(
+              "airbrush",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 3"/></svg>`
+            ),
           },
         ],
       },
@@ -309,22 +467,38 @@
           {
             id: "krColorDarkBrown",
             label: "Pigmento Marrom Café (#3d2d2d)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#3d2d2d"/></svg>`,
+            icon: iconOrFallback(
+              "swatchBrown",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#3d2d2d"/></svg>`
+            ),
           },
           {
             id: "krColorSage",
             label: "Pigmento Sálvia Botânico (#84987E)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#84987E"/></svg>`,
+            icon: iconOrFallback(
+              "swatchSage",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#84987E"/></svg>`
+            ),
           },
           {
             id: "krColorTerracotta",
             label: "Pigmento Terracota (#B86B4B)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#B86B4B"/></svg>`,
+            icon: iconOrFallback(
+              "swatchTerracotta",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" fill="#B86B4B"/></svg>`
+            ),
           },
           {
             id: "krColorCustom",
             label: "Escolher Cor Livre...",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>`,
+            icon: iconOrFallback(
+              "colorPicker",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>`
+            ),
           },
         ],
       },
@@ -335,17 +509,29 @@
           {
             id: "krBrushPlus",
             label: "Aumentar Pincel (+6px)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`,
+            icon: iconOrFallback(
+              "sizePlus",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`
+            ),
           },
           {
             id: "krBrushMinus",
             label: "Diminuir Pincel (-6px)",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`,
+            icon: iconOrFallback(
+              "sizeMinus",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`
+            ),
           },
           {
             id: "krEraser",
             label: "Borracha de Pintura",
-            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>`,
+            icon: iconOrFallback(
+              "eraser",
+              "pixel",
+              `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>`
+            ),
           },
         ],
       },

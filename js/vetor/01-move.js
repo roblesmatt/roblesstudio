@@ -1,6 +1,9 @@
 (() => {
   window.RoblesVectorTools = window.RoblesVectorTools || [];
 
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
   function pointInPolygon(pt, vs) {
     let inside = false;
     for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -90,28 +93,44 @@
         label: "Mover Livre (V)",
         description: "Arrasta objetos ou clique na borda/título da prancheta para movê-la com toda a arte.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3l14 9-6.5 1.5L10 20z"/></svg>`,
+        icon: getIcon(
+          "move",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3l14 9-6.5 1.5L10 20z"/></svg>`
+        ),
       },
       {
         id: "selectDeep",
         label: "Seleção em Profundidade",
         description: "Cada toque no mesmo ponto atravessa a pilha e seleciona o objeto de baixo.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 3 21 8 12 13 3 8"/><polyline points="3 13 12 18 21 13"/><polyline points="3 18 12 23 21 18"/></svg>`,
+        icon: getIcon(
+          "selectDeep",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 3 21 8 12 13 3 8"/><polyline points="3 13 12 18 21 13"/><polyline points="3 18 12 23 21 18"/></svg>`
+        ),
       },
       {
         id: "selectLasso",
         label: "Laço de Seleção Livre",
         description: "Desenha um contorno à mão livre para capturar e mover vários objetos de uma vez.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 14c-3-1.5-4-4.5-2-7 2.5-3 9.5-3.5 13-1 3.5 2.5 3 7.5-1 9.5-3.5 1.8-8 1-10-1.5z"/><circle cx="8" cy="16" r="2"/><path d="M8 18c0 2 1.5 3 3.5 3"/></svg>`,
+        icon: getIcon(
+          "selectLasso",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 14c-3-1.5-4-4.5-2-7 2.5-3 9.5-3.5 13-1 3.5 2.5 3 7.5-1 9.5-3.5 1.8-8 1-10-1.5z"/><circle cx="8" cy="16" r="2"/><path d="M8 18c0 2 1.5 3 3.5 3"/></svg>`
+        ),
       },
       {
         id: "moveAxis",
         label: "Mover com Eixo Travado",
         description: "Trava o arrasto de objetos ou pranchetas no eixo horizontal (X) ou vertical (Y).",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>`,
+        icon: getIcon(
+          "moveAxis",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>`
+        ),
       },
     ],
 

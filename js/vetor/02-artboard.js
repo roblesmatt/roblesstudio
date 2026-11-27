@@ -1,6 +1,9 @@
 (() => {
   window.RoblesVectorTools = window.RoblesVectorTools || [];
 
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
   const ARTBOARD_PRESETS = [
     { label: "Quadrado · 1080×1080", width: 340, height: 340 },
     { label: "A4 Retrato · 210×297mm", width: 280, height: 396 },
@@ -8,15 +11,19 @@
     { label: "Paisagem · 1920×1080", width: 420, height: 236 },
   ];
 
-  const ARTBOARD_MAIN_ICON = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 2v6M2 5h6"/>
-      <path d="M11 4h3M17 4h2a1 1 0 0 1 1 1v2"/>
-      <path d="M20 11v3M20 17v2a1 1 0 0 1-1 1h-2"/>
-      <path d="M13 20h-3M7 20H5a1 1 0 0 1-1-1v-2"/>
-      <rect x="8.5" y="8.5" width="7" height="7" rx="0.8" fill="currentColor" fill-opacity="0.22"/>
-    </svg>
-  `;
+  const ARTBOARD_MAIN_ICON = getIcon(
+    "artboard",
+    "vector",
+    `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 2v6M2 5h6"/>
+        <path d="M11 4h3M17 4h2a1 1 0 0 1 1 1v2"/>
+        <path d="M20 11v3M20 17v2a1 1 0 0 1-1 1h-2"/>
+        <path d="M13 20h-3M7 20H5a1 1 0 0 1-1-1v-2"/>
+        <rect x="8.5" y="8.5" width="7" height="7" rx="0.8" fill="currentColor" fill-opacity="0.22"/>
+      </svg>
+    `
+  );
 
   function getTargetSurface(ctx) {
     if (ctx.state.submode === "layout") {
@@ -53,7 +60,11 @@
         label: "Ajustar à Arte (Auto-Fit)",
         description: "Enquadra a prancheta automaticamente em volta de todos os objetos desenhados.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>`,
+        icon: getIcon(
+          "artboardFit",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>`
+        ),
         onAction(ctx) {
           const paths = ctx.ws.paths || [];
           if (paths.length === 0) return;
@@ -87,7 +98,11 @@
         label: "Girar Orientação (90°)",
         description: "Alterna entre Retrato e Paisagem e gira 90° a prancheta junto com a arte.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="14" rx="1.5"/><path d="M16 4h3a2 2 0 0 1 2 2v3"/><path d="M18 2l-2 2 2 2"/><path d="M17 14h4v7h-4"/></svg>`,
+        icon: getIcon(
+          "artboardFlip",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="14" rx="1.5"/><path d="M16 4h3a2 2 0 0 1 2 2v3"/><path d="M18 2l-2 2 2 2"/><path d="M17 14h4v7h-4"/></svg>`
+        ),
         onAction(ctx) {
           const target = getTargetSurface(ctx);
           const cx = target.x || 0;
@@ -132,7 +147,11 @@
         label: "Alternar Formatos Padrão",
         description: "Cicla entre Quadrado (1080×1080), A4 Editorial, Rótulo (70×84mm) e 16:9.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12" height="16" rx="1.5"/><path d="M15 8h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4"/></svg>`,
+        icon: getIcon(
+          "artboardPresets",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12" height="16" rx="1.5"/><path d="M15 8h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4"/></svg>`
+        ),
         onAction(ctx) {
           const idx = ((ctx.state._abPresetIdx ?? -1) + 1) % ARTBOARD_PRESETS.length;
           ctx.state._abPresetIdx = idx;

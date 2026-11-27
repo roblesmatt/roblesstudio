@@ -1,16 +1,23 @@
 (() => {
   window.RoblesVectorTools = window.RoblesVectorTools || [];
 
+  const getIcon = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
+
   // Ícone fiel à referência: canto reto com seta diagonal apontando para o arco com nó circular
-  const CORNER_MAIN_ICON = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 19V5h14"/>
-      <path d="M5 5l5.5 5.5"/>
-      <path d="M6.5 10.5h4v-4"/>
-      <path d="M11.5 19a7.5 7.5 0 0 1 7.5-7.5"/>
-      <circle cx="13.5" cy="13.5" r="2.3" fill="var(--surface, #1c1917)"/>
-    </svg>
-  `;
+  const CORNER_MAIN_ICON = getIcon(
+    "corner",
+    "vector",
+    `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 19V5h14"/>
+        <path d="M5 5l5.5 5.5"/>
+        <path d="M6.5 10.5h4v-4"/>
+        <path d="M11.5 19a7.5 7.5 0 0 1 7.5-7.5"/>
+        <circle cx="13.5" cy="13.5" r="2.3" fill="var(--surface, #1c1917)"/>
+      </svg>
+    `
+  );
 
   function getCornerHandles(path) {
     if (!path || !Array.isArray(path.points) || path.points.length < 3) return [];
@@ -101,7 +108,11 @@
         label: "Chanfro Reto (45°)",
         description: "Converte os cantos do objeto selecionado em cortes chanfrados diagonais.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V11l6-6h8"/><circle cx="8" cy="8" r="2" fill="var(--surface, #1c1917)"/></svg>`,
+        icon: getIcon(
+          "cornerChamfer",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V11l6-6h8"/><circle cx="8" cy="8" r="2" fill="var(--surface, #1c1917)"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
@@ -117,7 +128,11 @@
         label: "Canto Côncavo (Invertido)",
         description: "Cria recorte arqueado interno nos cantos, ideal para rótulos e molduras.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19v-7a7 7 0 0 0 7-7h7"/><circle cx="10" cy="10" r="2" fill="var(--surface, #1c1917)"/></svg>`,
+        icon: getIcon(
+          "cornerInverted",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19v-7a7 7 0 0 0 7-7h7"/><circle cx="10" cy="10" r="2" fill="var(--surface, #1c1917)"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (!current || !Array.isArray(current.points) || current.points.length < 3) return;
@@ -133,7 +148,11 @@
         label: "Zerar Cantos (0px)",
         description: "Remove o arredondamento e restaura os vértices retos de 90°.",
         preview: "",
-        icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V5h14"/><rect x="4" y="4" width="4" height="4" fill="currentColor"/></svg>`,
+        icon: getIcon(
+          "cornerReset",
+          "vector",
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V5h14"/><rect x="4" y="4" width="4" height="4" fill="currentColor"/></svg>`
+        ),
         onAction(ctx) {
           const current = ctx.getSelectedPath();
           if (!current) return;

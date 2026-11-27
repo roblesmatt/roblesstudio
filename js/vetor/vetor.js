@@ -1,5 +1,7 @@
 (() => {
   const CORE = () => window.RoblesCore || window.RoblesStudio || null;
+  const iconOrFallback = (key, group, fallback) =>
+    window.RoblesIcons?.get?.(key, group) || fallback;
 
   // 1. Sub-Personas no canto superior direito ao ativar "Vetor"
   const VECTOR_SUBMODES = [
@@ -7,19 +9,31 @@
       id: "normal",
       label: "Normal · Prancheta Vetorial",
       description: "Edição vetorial livre com prancheta e camadas.",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>`,
+      icon: iconOrFallback(
+        "pen",
+        "vector",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>`
+      ),
     },
     {
       id: "typography",
       label: "Tipografia · Estúdio de Fontes",
       description: "Desenho de glifos com guias métricas tipográficas.",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h14M12 6v13M8 19h8"/><line x1="3" y1="10" x2="21" y2="10" stroke-dasharray="2 2" opacity="0.65"/></svg>`,
+      icon: iconOrFallback(
+        "text",
+        "vector",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h14M12 6v13M8 19h8"/><line x1="3" y1="10" x2="21" y2="10" stroke-dasharray="2 2" opacity="0.65"/></svg>`
+      ),
     },
     {
       id: "layout",
       label: "Layout · Diagramação & Páginas",
       description: "Composição editorial com colunas, margens e sangria.",
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.5"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="4" y1="9" x2="20" y2="9"/></svg>`,
+      icon: iconOrFallback(
+        "artboard",
+        "vector",
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.5"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="4" y1="9" x2="20" y2="9"/></svg>`
+      ),
     },
   ];
 
