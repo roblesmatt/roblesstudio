@@ -4,7 +4,7 @@
 
   window.RoblesInspectorModules = window.RoblesInspectorModules || {};
 
-  // Estado persistente dos controles de estilo
+  // Estado persistente dos controlos de estilo
   const styleState = {
     // Vetor > Normal & Geral
     fillColor: "#3d2d2d",
@@ -416,6 +416,15 @@
     Core.emit?.("render:request");
   }
 
+  function formatRulerDisplayValue(val, step) {
+    const num = Number(val);
+    if (!Number.isFinite(num)) return String(val ?? "");
+    const stepStr = String(step ?? 1);
+    const decMatch = stepStr.split(".")[1];
+    const decimals = decMatch ? Math.min(3, decMatch.length) : 0;
+    return decimals > 0 ? num.toFixed(decimals) : String(Math.round(num));
+  }
+
   function renderControl(ctrl) {
     const val = styleState[ctrl.key];
 
@@ -432,22 +441,35 @@
     }
 
     if (ctrl.type === "range") {
+      const min = Number(ctrl.min ?? 0);
+      const max = Number(ctrl.max ?? 100);
+      const step = Number(ctrl.step ?? 1) || 1;
+      const numVal = Number(val ?? min);
+      const span = max - min || 1;
+      const pct = Math.max(0, Math.min(100, ((numVal - min) / span) * 100));
+      const displayNum = formatRulerDisplayValue(numVal, step);
+
       return `
-        <div class="history-step-row" style="flex-direction:column;align-items:stretch;gap:3px;cursor:default;padding:5px 6px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:12px;">${ctrl.label}</span>
-            <span class="history-step-ref" data-style-val="${ctrl.key}" style="font-size:11px;">${val}${ctrl.unit || ""}</span>
+        <div class="rs-ruler-box" data-ruler-wrap="${ctrl.key}">
+          <div class="rs-ruler-head">
+            <span class="rs-ruler-label">${ctrl.label}</span>
+            <span class="rs-ruler-val" data-style-val="${ctrl.key}">${displayNum}${ctrl.unit || ""}</span>
           </div>
-          <input
-            type="range"
+          <div
+            class="rs-ruler-track"
+            role="slider"
+            tabindex="0"
+            aria-label="${ctrl.label}"
+            aria-valuemin="${min}"
+            aria-valuemax="${max}"
+            aria-valuenow="${numVal}"
             data-style-key="${ctrl.key}"
+            data-style-min="${min}"
+            data-style-max="${max}"
+            data-style-step="${step}"
             data-style-unit="${ctrl.unit || ""}"
-            min="${ctrl.min}"
-            max="${ctrl.max}"
-            step="${ctrl.step}"
-            value="${val}"
-            style="width:100%;accent-color:#3d2d2d;cursor:pointer;"
-          />
+            style="--pct: ${pct.toFixed(2)}%;"
+          ></div>
         </div>
       `;
     }
@@ -536,25 +558,94 @@
     },
 
     bindEvents(container, rerender, ctx = {}) {
-      container.querySelectorAll("[data-style-key]").forEach((el) => {
+      // Régua segmentada padrão para controlos de valor
+      container.querySelectorAll(".rs-ruler-track[data-style-key]").forEach((track) => {
+        const key = track.dataset.styleKey;
+        const min = Number(track.dataset.styleMin ?? 0);
+        const max = Number(track.dataset.styleMax ?? 100);
+        const step = Number(track.dataset.styleStep ?? 1) || 1;
+        const unit = track.dataset.styleUnit || "";
+        const span = max - min || 1;
+
+        const snapToStep = (rawNum) => {
+          const clamped = Math.max(min, Math.min(max, rawNum));
+          const snapped = min + Math.round((clamped - min) / step) * step;
+          return Math.max(min, Math.min(max, Number(snapped.toFixed(4))));
+        };
+
+        const applyValueToRuler = (nextVal) => {
+          const pct = (((nextVal - min) / span) * 100).toFixed(2);
+          track.style.setProperty("--pct", `${pct}%`);
+          track.setAttribute("aria-valuenow", String(nextVal));
+
+          const badge = container.querySelector(`[data-style-val="${key}"]`);
+          if (badge) {
+            badge.textContent = `${formatRulerDisplayValue(nextVal, step)}${unit}`;
+          }
+
+          if (styleState[key] !== nextVal) {
+            commitStyleChange(key, nextVal, ctx);
+          }
+        };
+
+        const updateFromClientX = (clientX) => {
+          const rect = track.getBoundingClientRect();
+          if (!rect.width) return;
+          const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+          applyValueToRuler(snapToStep(min + ratio * span));
+        };
+
+        track.addEventListener("click", (e) => e.stopPropagation());
+
+        track.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          track.focus?.();
+          track.setPointerCapture?.(e.pointerId);
+          track.dataset.dragging = "1";
+          updateFromClientX(e.clientX);
+        });
+
+        track.addEventListener("pointermove", (e) => {
+          if (track.dataset.dragging !== "1") return;
+          e.preventDefault();
+          e.stopPropagation();
+          updateFromClientX(e.clientX);
+        });
+
+        const stopDrag = (e) => {
+          if (track.dataset.dragging !== "1") return;
+          e.stopPropagation();
+          track.dataset.dragging = "0";
+          if (track.hasPointerCapture?.(e.pointerId)) {
+            track.releasePointerCapture(e.pointerId);
+          }
+        };
+
+        track.addEventListener("pointerup", stopDrag);
+        track.addEventListener("pointercancel", stopDrag);
+
+        track.addEventListener("keydown", (e) => {
+          let delta = 0;
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") delta = step;
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") delta = -step;
+          else return;
+
+          e.preventDefault();
+          e.stopPropagation();
+          const current = Number(track.getAttribute("aria-valuenow") ?? styleState[key] ?? min);
+          applyValueToRuler(snapToStep(current + delta));
+        });
+      });
+
+      // Demais controlos (cor, seleção, segmentados, toggles)
+      container.querySelectorAll("[data-style-key]:not(.rs-ruler-track)").forEach((el) => {
         const key = el.dataset.styleKey;
-        const unit = el.dataset.styleUnit || "";
-
         el.addEventListener("click", (e) => e.stopPropagation());
-
-        if (el.type === "range") {
-          el.addEventListener("input", () => {
-            const num = Number(el.value);
-            const badge = container.querySelector(`[data-style-val="${key}"]`);
-            if (badge) badge.textContent = `${num}${unit}`;
-            commitStyleChange(key, num, ctx);
-          });
-        } else {
-          el.addEventListener("change", () => {
-            commitStyleChange(key, el.value, ctx);
-            rerender();
-          });
-        }
+        el.addEventListener("change", () => {
+          commitStyleChange(key, el.value, ctx);
+          rerender();
+        });
       });
 
       container.querySelectorAll("[data-style-seg]").forEach((btn) => {
